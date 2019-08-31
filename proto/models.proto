@@ -1,0 +1,39 @@
+syntax = "proto3";
+
+message HouseholdMember {
+  string given_name = 1;
+  uint32 age = 2;
+}
+
+message Host {
+  bool active = 1;
+  uint32 capacity = 2; // number of guests
+  bool kids = 3;
+}
+
+enum ContactType {
+  EMAIL = 0;
+  PHONE_TEXT = 1;
+  PHONE_CALL = 2;
+}
+
+message Household {
+  string id = 1;
+  string surname = 2;
+  repeated HouseholdMember members = 3; // length of members == size of household
+  string email = 4;
+  uint32 phone = 5;
+  ContactType preferred_contact = 6;
+  bool active = 7;
+  bool host = 8;
+}
+
+message Group {
+  string host_id = 1; // household.id
+  repeated string household_ids = 2; // all household.ids that are not the host
+  string date_assigned = 3;
+}
+
+message Settings {
+
+}
