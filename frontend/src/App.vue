@@ -2,7 +2,7 @@
   <v-app id="inspire">
     <v-navigation-drawer v-model="drawer" clipped fixed app>
       <v-list dense>
-        <router-link v-for="(action, i) in actions" :key="i" :to="action.route"   > 
+        <router-link v-for="(action, i) in actions" :key="i" :to="action.route"> 
           <v-list-tile>
             <v-list-tile-action>
               <v-icon>{{ action.icon }}</v-icon>
@@ -21,7 +21,6 @@
     <v-content>
       <v-container fluid class="px-0">
         <router-view></router-view>
-        <hello-world></hello-world>
       </v-container>
     </v-content>
     <v-footer app fixed>
@@ -31,10 +30,14 @@
 </template>
 
 <script>
-import HelloWorld from "./components/HelloWorld.vue";
+//import HelloWorld from "./components/HelloWorld.vue";
 
 export default {
-  data: () => ({
+  data: () => {
+    backend.WailsActor.Request(JSON.stringify({type: "CreateHousehold", payload: {surname: "Bright", members: 4}}))
+      .then(console.log);
+
+    return {
     drawer: false,
     actions: [
       {
@@ -58,9 +61,9 @@ export default {
         route: "/settings"
       }
     ]
-  }),
+  }
+  },
   components: {
-    HelloWorld
   },
   props: {
     source: String

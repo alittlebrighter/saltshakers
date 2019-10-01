@@ -1,27 +1,26 @@
+//go:generate protoc -I proto/ --go_out=models proto/models.proto
+
 package main
 
 import (
-  "github.com/leaanthony/mewn"
-  "github.com/wailsapp/wails"
-)
+	"os"
+	"os/signal"
 
-func basic() string {
-  return "Hello World!"
-}
+	"github.com/AsynkronIT/protoactor-go/actor"
+)
 
 func main() {
 
-  js := mewn.String("./frontend/dist/app.js")
-  css := mewn.String("./frontend/dist/app.css")
+	managerContext := actor.EmptyRootContext
 
-  app := wails.CreateApp(&wails.AppConfig{
-    Width:  1024,
-    Height: 768,
-    Title:  "Saltshakers",
-    JS:     js,
-    CSS:    css,
-    Colour: "#131313",
-  })
-  app.Bind(basic)
-  app.Run()
+	managerProps := actor.PropsFromProducer(func() actor.Actor {
+		return new(AppActor)
+	})
+	manager := managerContext.Spawn(managerProps)
+
+	signals := make(chan os.Signal)
+	signal.Notify(signals, os.Interrupt)
+
+	<-signals
+	managerContext.Stop(manager)
 }
