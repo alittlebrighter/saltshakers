@@ -1,24 +1,35 @@
 <template>
-  <v-layout justify-center align-center class="px-0">
-    <v-row align="center">
-      <h1>{{ title }}</h1>
-    </v-row>
-    <v-form>
-      <v-text-field v-model="household.surname" />
-    </v-form>
-  </v-layout>
+  <div>
+    <h1>{{ title }}</h1>
+    <form>
+      <input v-model="household.surname" type="text" placeholder="Surname" /><br>
+      <input v-model="household.email" type="text" placeholder="Email" />
+      <button v-on:click="save()">Save</button>
+    </form>
+  </div>
 </template>
 
 <script>
 export default {
-  data: () => ({
-    title: "Add/Edit Household",
-    household: {
-      surname: "",
+  data() {
+    return {
+      title: "Add/Edit Household",
+      household: {
+        surname: "",
+        email: "",
+      }
+    };
+  },
+  methods: {
+    save() {
+      backend.WailsActor.Request(JSON.stringify({type: "CreateHousehold", payload: this.household}))
+        .then(result => {
+          console.log("households:", result);
+          self.households = result;
+        });
     }
-  }),
-  components: {
-  }
+  },
+  components: {}
 };
 </script>
 

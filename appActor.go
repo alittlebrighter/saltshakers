@@ -25,6 +25,7 @@ func (state *AppActor) Receive(context actor.Context) {
 		case messages.RulesPID:
 			context.Respond(messages.NewPIDEnvelope(messages.RulesPID, state.rules))
 		case messages.PersistencePID:
+			log.Println("app", "sending persistence PID")
 			context.Respond(messages.NewPIDEnvelope(messages.PersistencePID, state.persistence))
 		}
 	case *actor.Started:
@@ -38,7 +39,7 @@ func (state *AppActor) Receive(context actor.Context) {
 		/*
 			state.io.Stop()
 			state.persistence.Stop()
-			state.logic.Stop()
+			state.rules.Stop()
 			state.config.Stop()
 		*/
 	case *actor.Stopped:

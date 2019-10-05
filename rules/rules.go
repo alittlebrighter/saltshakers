@@ -15,9 +15,9 @@ type RulesActor struct {
 }
 
 func (state *RulesActor) Receive(context actor.Context) {
-	switch context.Message().(type) {
-	case messages.PIDEnvelope:
-
+	switch msg := context.Message().(type) {
+	case *messages.PIDEnvelope:
+		state.ManagePIDs(context, msg)
 	case *actor.Started:
 		state.SetChildren(context,
 			actor.PropsFromProducer(HouseholdRulesProducer),

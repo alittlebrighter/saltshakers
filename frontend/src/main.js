@@ -11,10 +11,12 @@ import VueRouter from 'vue-router'
 Vue.use(VueRouter)
 
 import Households from "./pages/Households.vue";
+import AddHousehold from "./pages/AddHousehold.vue";
 
 const router = new VueRouter({
   routes: [
-    { path: '/households', component: Households }
+    { path: '/households', component: Households },
+    { path: '/add-household', component: AddHousehold }
   ]
 })
 

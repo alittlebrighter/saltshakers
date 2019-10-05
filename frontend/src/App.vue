@@ -34,9 +34,6 @@
 
 export default {
   data: () => {
-    backend.WailsActor.Request(JSON.stringify({type: "CreateHousehold", payload: {surname: "Bright", members: 4}}))
-      .then(console.log);
-
     return {
     drawer: false,
     actions: [

@@ -60,24 +60,39 @@ func (state *WailsActor) Receive(context actor.Context) {
 
 func (w *WailsActor) Request(msg string) (string, error) {
 	if w.rulesPID == nil {
-		return "", errors.New("No rules available to process the request.")
+		return msg, errors.New("no rules available to process this request")
 	}
 
 	envelope := ActionEnvelope{}
 	if err := json.Unmarshal([]byte(msg), &envelope); err != nil {
-		log.Println("ERROR: could not decode ActionEnvelope, message:", msg, "error:", err)
+		log.Println(w.Name(), ": could not decode ActionEnvelope, message:", msg, "error:", err)
 		return "", err
 	}
 
-	var request *actor.Future
+	var payload interface{}
 	switch envelope.ActionType {
 	case "CreateHousehold":
-		payload := messages.CreateHousehold{}
-		json.Unmarshal(envelope.Payload, &payload.Household)
-		request = w.ctx.RequestFuture(w.rulesPID, payload, 5*time.Second)
+		p := messages.CreateHousehold{}
+		if err := json.Unmarshal(envelope.Payload, &p); err != nil {
+			return "", err
+		}
+		payload = p
+	case "GetHousehold":
+		p := messages.GetHousehold{}
+		if err := json.Unmarshal(envelope.Payload, &p); err != nil {
+			return "", err
+		}
+		payload = p
+	case "QueryHouseholds":
+		p := messages.QueryHouseholds{}
+		if err := json.Unmarshal(envelope.Payload, &p); err != nil {
+			return "", err
+		}
+		payload = p
 	}
 
-	result, err := request.Result()
+	log.Println(w.Name(), "making request, payload:", payload)
+	result, err := w.ctx.RequestFuture(w.rulesPID, payload, 5*time.Second).Result()
 	if err != nil {
 		return "", err
 	}

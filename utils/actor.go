@@ -1,6 +1,8 @@
 package utils
 
 import (
+	"log"
+
 	"github.com/AsynkronIT/protoactor-go/actor"
 	"github.com/AsynkronIT/protoactor-go/router"
 	"github.com/alittlebrighter/saltshakers/messages"
@@ -8,13 +10,15 @@ import (
 
 type BaseActor struct {
 	name        string
-	knownPIDS   map[messages.PIDType]*actor.PID
+	knownPIDs   map[messages.PIDType]*actor.PID
 	childProps  *actor.Props
 	childrenPID *actor.PID
+
+	restarts uint8
 }
 
 func NewBaseActor(name string) *BaseActor {
-	return &BaseActor{name: name, knownPIDS: make(map[messages.PIDType]*actor.PID)}
+	return &BaseActor{name: name, knownPIDs: make(map[messages.PIDType]*actor.PID)}
 }
 
 func (a *BaseActor) Name() string {
@@ -35,19 +39,30 @@ func (a *BaseActor) Children() *actor.PID {
 	return a.childrenPID
 }
 
-func (state *BaseActor) Receive(context actor.Context) {
-	switch msg := context.Message().(type) {
-	case *messages.PIDEnvelope:
-		localPID, localExists := state.knownPIDS[msg.Type()]
+func (state *BaseActor) ManagePIDs(context actor.Context, msg *messages.PIDEnvelope) {
+	localPID, localExists := state.knownPIDs[msg.Type()]
 
-		if msg.PID() == nil && localExists {
-			context.Respond(messages.NewPIDEnvelope(msg.Type(), localPID))
-		} else if msg.PID() == nil {
-			context.Forward(context.Parent())
-		} else {
-			state.knownPIDS[msg.Type()] = msg.PID()
-			context.Forward(state.Children())
-		}
+	if msg.PID() == nil && localExists {
+		log.Println(state.Name(), "providing known PID", msg.Type())
+		context.Respond(messages.NewPIDEnvelope(msg.Type(), localPID))
+	} else if msg.PID() == nil {
+		log.Println(state.Name(), "requesting unknown PID", msg.Type())
+		context.Forward(context.Parent())
+	} else {
+		log.Println(state.Name(), "setting and forwarding PID", msg.Type())
+		state.knownPIDs[msg.Type()] = msg.PID()
+		context.Forward(state.Children())
+	}
+}
 
+func (state *BaseActor) GetPID(pidType messages.PIDType) *actor.PID {
+	return state.knownPIDs[pidType]
+}
+
+func (state *BaseActor) Restarting(context actor.Context, msg *actor.Restarting) {
+	state.restarts++
+
+	if state.restarts > 3 {
+		context.Poison(context.Self())
 	}
 }

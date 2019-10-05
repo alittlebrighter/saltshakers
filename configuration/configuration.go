@@ -36,7 +36,7 @@ var appConfiguration = AppConfig{
 			kind: Bolt,
 			GenericConfig: GenericConfig{
 				Params: map[string]interface{}{
-					"dbPath": "%s/saltshakers.boltdb",
+					"dbPath": "./saltshakers.db",
 				},
 			},
 		},
@@ -44,7 +44,7 @@ var appConfiguration = AppConfig{
 			kind: File,
 			GenericConfig: GenericConfig{
 				Params: map[string]interface{}{
-					"filePath": "%s/saltshakers.boltdb",
+					"filePath": "%s/saltshakers.log",
 				},
 			},
 		},

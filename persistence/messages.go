@@ -1,22 +1,32 @@
 package persistence
 
 type HasID interface {
-	ID() string
+	GetId() uint64
+	SetId(uint64)
+}
+
+type PersistenceEnvelope struct {
+	EntityType string
 }
 
 type Create struct {
 	EntityType string
-	Entity     interface{}
+	Entity     HasID
 	Upsert     bool
 }
 
 type GetOne struct {
 	EntityType string
-	ID         string
+	Id         uint64
+	Entity     HasID
 }
 
+// Query with no Filters gets all values
 type Query struct {
-	Filters []Filter
+	EntityType string
+	Model      interface{} // should be a type literal
+	Entities   []interface{}
+	Filters    []Filter
 }
 
 type Filter struct {
@@ -34,4 +44,5 @@ type Update struct {
 
 type Delete struct {
 	EntityType string
+	Id         uint64
 }

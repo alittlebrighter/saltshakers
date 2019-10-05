@@ -38,7 +38,12 @@ type CreateHousehold struct {
 	models.Household
 }
 
-type ReadHousehold struct {
+type GetHousehold struct {
+	Id uint64 `json:"id"`
+}
+
+type QueryHouseholds struct {
+	Filters []struct{ Key, Value, Op string } `json:"filters"`
 }
 
 type UpdateHousehold struct {
