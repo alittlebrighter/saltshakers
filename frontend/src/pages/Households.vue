@@ -1,7 +1,7 @@
 <template>
   <div>
     <h1>{{ title }}</h1>
-    <router-link to="/add-household">Add Household</router-link>
+    <router-link to="/add-household/null">Add Household</router-link>
     <ul>
       <li v-for="hh in households">
         <router-link :to="'/add-household/' + hh.id">
@@ -26,6 +26,7 @@ export default {
 
       backend.WailsActor.Request(JSON.stringify({type: "QueryHouseholds", payload: {filters: []}}))
         .then(function(toParse) {
+          console.log("housheholds:", JSON.parse(toParse));
           self.households = JSON.parse(toParse);
         });
     },

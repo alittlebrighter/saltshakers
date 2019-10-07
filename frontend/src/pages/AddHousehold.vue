@@ -11,14 +11,31 @@
 
 <script>
 export default {
+  props: {
+    id: null
+  },
   data() {
-    return {
-      title: "Add/Edit Household",
-      household: {
-        surname: "",
-        email: "",
-      }
+    const emptyHH = {
+      surname: "",
+      email: "",
     };
+
+    console.log("hh id:", this.$route.params.id)
+    if (this.$route.params.id) {
+      const self = this;
+      backend.WailsActor.Request(JSON.stringify({type: "GetHousehold", payload: {id: this.$route.params.id}}))
+        .then(result => {
+          console.log("result:", result);
+          self.household = JSON.parse(result) || emptyHH;
+        })
+    }
+
+    const data = {
+      title: "Add/Edit Household",
+      household: emptyHH
+    }
+
+    return data;
   },
   methods: {
     save() {

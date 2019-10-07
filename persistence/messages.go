@@ -1,8 +1,8 @@
 package persistence
 
 type HasID interface {
-	GetId() uint64
-	SetId(uint64)
+	GetId() []byte
+	SetId([]byte)
 }
 
 type PersistenceEnvelope struct {
@@ -17,7 +17,7 @@ type Create struct {
 
 type GetOne struct {
 	EntityType string
-	Id         uint64
+	Id         []byte
 	Entity     HasID
 }
 
@@ -44,5 +44,5 @@ type Update struct {
 
 type Delete struct {
 	EntityType string
-	Id         uint64
+	Id         []byte
 }

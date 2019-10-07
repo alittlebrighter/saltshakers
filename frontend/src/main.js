@@ -16,7 +16,7 @@ import AddHousehold from "./pages/AddHousehold.vue";
 const router = new VueRouter({
   routes: [
     { path: '/households', component: Households },
-    { path: '/add-household', component: AddHousehold }
+    { path: '/add-household/:id', component: AddHousehold, props: { id: null } }
   ]
 })
 

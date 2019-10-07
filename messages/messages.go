@@ -39,7 +39,7 @@ type CreateHousehold struct {
 }
 
 type GetHousehold struct {
-	Id uint64 `json:"id"`
+	Id []byte `json:"id"`
 }
 
 type QueryHouseholds struct {

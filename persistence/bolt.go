@@ -27,39 +27,37 @@ type BoltDBActor struct {
 func (state *BoltDBActor) Receive(context actor.Context) {
 	switch msg := context.Message().(type) {
 	case Create:
-		log.Println(state.Name(), ": creating", msg.EntityType, msg.Entity)
 		err := state.db.Update(func(tx *bolt.Tx) error {
 			b, err := tx.CreateBucketIfNotExists([]byte(msg.EntityType))
 			if err != nil {
 				return err
 			}
 
-			if !msg.Upsert || msg.Entity.GetId() == 0 {
+			if !msg.Upsert || len(msg.Entity.GetId()) == 0 {
 				id, err := b.NextSequence()
 				if err != nil {
 					return err
 				}
-				msg.Entity.SetId(id)
+				msg.Entity.SetId(itob(id))
 			}
 
 			marshaled, err := json.Marshal(msg.Entity)
 			if err != nil {
 				return err
 			}
-			return b.Put(itob(msg.Entity.GetId()), marshaled)
+			return b.Put(msg.Entity.GetId(), marshaled)
 		})
 		if err != nil {
 			log.Println(state.Name(), err)
 		}
 		context.Respond(msg)
 	case GetOne:
-		log.Println(state.Name(), ": getting one", msg.EntityType, msg.Id)
 		err := state.db.View(func(tx *bolt.Tx) error {
 			b := tx.Bucket([]byte(msg.EntityType))
 
-			marshaled := b.Get(itob(msg.Id))
+			marshaled := b.Get(msg.Id)
 			json.Unmarshal(marshaled, msg.Entity)
-
+			log.Println("got household", msg.Entity)
 			context.Respond(msg)
 			return nil
 		})
