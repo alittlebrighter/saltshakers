@@ -1,6 +1,7 @@
 package rules
 
 import (
+	"log"
 	"sort"
 	"time"
 
@@ -64,14 +65,55 @@ func (state *GroupRulesActor) Receive(context actor.Context) {
 			groups[i] = &models.Group{
 				HostId:       hostScores[i].Id,
 				DateAssigned: now,
+				HouseholdIds: [][]byte{hostScores[i].Id},
 			}
 
 			households = FilterHouseholds(households, []models.HouseholdFilter{
 				func(hh *models.Household) bool {
-					return string(hh.GetId()) != string(groups[i].HostId)
+					return string(hh.GetId()) != string(groups[i].GetHostId())
 				},
 			})
 		}
+
+		for i := range groups {
+			// score other households against hosts
+			otherHHScores := ScoreGroup(groups[i].GetHostId(), households, historicalGroups)
+			By(scoreAsc).Sort(otherHHScores)
+
+			log.Println(state.Name(), "adding households", len(households), int(msg.TargetHouseholdCount)-1)
+			if len(households) >= int(msg.TargetHouseholdCount)-1 {
+				for _, score := range otherHHScores[:msg.TargetHouseholdCount-1] {
+					groups[i].HouseholdIds = append(groups[i].HouseholdIds, score.Id)
+				}
+			} else if float32(len(households)) >= .5*float32(msg.TargetHouseholdCount) {
+				for _, score := range otherHHScores {
+					groups[i].HouseholdIds = append(groups[i].HouseholdIds, score.Id)
+				}
+			}
+
+			households = FilterHouseholds(households, []models.HouseholdFilter{
+				func(hh *models.Household) bool {
+					notFound := true
+					for _, hhId := range groups[i].GetHouseholdIds() {
+						if string(hh.GetId()) == string(hhId) {
+							notFound = false
+							break
+						}
+					}
+					return notFound
+				},
+			})
+		}
+
+		for i := 0; len(households) > 0; i = (i + 1) % len(groups) {
+			groups[i].HouseholdIds = append(groups[i].HouseholdIds, households[0].GetId())
+			if len(households) > 1 {
+				households = households[1:]
+			} else {
+				households = []*models.Household{}
+			}
+		}
+
 		context.Respond(groups)
 	case *messages.PIDEnvelope:
 		switch msg.Type() {
@@ -109,6 +151,53 @@ func ScoreHosts(hosts [][]byte, groups []*models.Group) []Score {
 	scores := []Score{}
 	for hostId, score := range scoreMap {
 		scores = append(scores, Score{Id: []byte(hostId), Score: score})
+	}
+
+	return scores
+}
+
+// ScoreGroup returns a list of householdIds with a score attached low scores should be selected to be grouped with targetHousehold
+// targetHousehold should not exist in households list
+func ScoreGroup(targetHousehold []byte, households []*models.Household, groups []*models.Group) []Score {
+	// initialize map
+	scoreMap := map[string]int{}
+	for _, hh := range households {
+		scoreMap[string(hh.GetId())] = 0
+	}
+
+	// score hosts
+	const maxScore int = 90
+	now := time.Now().Unix()
+	for _, group := range groups {
+		found := false
+		for _, hh := range group.GetHouseholdIds() {
+			if string(targetHousehold) == string(hh) {
+				found = true
+				break
+			}
+		}
+		if !found {
+			continue
+		}
+
+		daysDiff := time.Duration(now-group.GetDateAssigned().GetSeconds()) * time.Second % (time.Hour * 24)
+		instanceScore := maxScore - int(daysDiff)
+
+		if instanceScore <= 0 {
+			instanceScore = 1
+		}
+
+		for _, hh := range group.GetHouseholdIds() {
+			if _, exists := scoreMap[string(hh)]; exists {
+				scoreMap[string(hh)] += instanceScore
+			}
+		}
+	}
+
+	// convert to array of scores
+	scores := []Score{}
+	for hhId, score := range scoreMap {
+		scores = append(scores, Score{Id: []byte(hhId), Score: score})
 	}
 
 	return scores
