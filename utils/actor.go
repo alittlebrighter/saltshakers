@@ -1,8 +1,6 @@
 package utils
 
 import (
-	"log"
-
 	"github.com/AsynkronIT/protoactor-go/actor"
 	"github.com/AsynkronIT/protoactor-go/router"
 	"github.com/alittlebrighter/saltshakers/messages"
@@ -43,13 +41,10 @@ func (state *BaseActor) ManagePIDs(context actor.Context, msg *messages.PIDEnvel
 	localPID, localExists := state.knownPIDs[msg.Type()]
 
 	if msg.PID() == nil && localExists {
-		log.Println(state.Name(), "providing known PID", msg.Type())
 		context.Respond(messages.NewPIDEnvelope(msg.Type(), localPID))
 	} else if msg.PID() == nil {
-		log.Println(state.Name(), "requesting unknown PID", msg.Type())
 		context.Forward(context.Parent())
 	} else {
-		log.Println(state.Name(), "setting and forwarding PID", msg.Type())
 		state.knownPIDs[msg.Type()] = msg.PID()
 		context.Forward(state.Children())
 	}

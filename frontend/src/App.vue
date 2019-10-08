@@ -34,6 +34,14 @@
 
 export default {
   data: () => {
+    backend.WailsActor.Request(JSON.stringify({type: "GenerateGroups", payload: {targetHouseholdCount: 4}}))
+      .then(result => {
+        var parsed = JSON.parse(result);
+        console.log("generated groups", parsed);
+      })
+      .catch(err => {
+        console.log("error generating groups:", err);
+      });
     return {
     drawer: false,
     actions: [

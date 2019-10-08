@@ -1,8 +1,6 @@
 package main
 
 import (
-	"log"
-
 	"github.com/AsynkronIT/protoactor-go/actor"
 	"github.com/alittlebrighter/saltshakers/configuration"
 	"github.com/alittlebrighter/saltshakers/io"
@@ -25,11 +23,9 @@ func (state *AppActor) Receive(context actor.Context) {
 		case messages.RulesPID:
 			context.Respond(messages.NewPIDEnvelope(messages.RulesPID, state.rules))
 		case messages.PersistencePID:
-			log.Println("app", "sending persistence PID")
 			context.Respond(messages.NewPIDEnvelope(messages.PersistencePID, state.persistence))
 		}
 	case *actor.Started:
-		log.Println("AppActor started")
 		// start in dependency order, config has no dependencies (at the moment)
 		state.config = context.Spawn(actor.PropsFromProducer(configuration.Producer))
 		state.persistence = context.Spawn(actor.PropsFromProducer(persistence.Producer))

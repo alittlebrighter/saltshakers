@@ -4,7 +4,8 @@
     <form>
       <input v-model="household.surname" type="text" placeholder="Surname" /><br>
       <input v-model="household.email" type="text" placeholder="Email" /><br>
-      <span>host</span><input v-model="household.host" type="checkbox" /><br>
+      <span>host</span><input v-model="household.host" type="checkbox" />&nbsp;
+      <span>active</span><input v-model="household.active" type="checkbox" /><br>
       <button v-on:click="save(household)">Save</button>
     </form>
   </div>
@@ -19,6 +20,8 @@ export default {
     const emptyHH = {
       surname: "",
       email: "",
+      host: false,
+      active: true
     };
 
     console.log("hh id:", this.$route.params.id)

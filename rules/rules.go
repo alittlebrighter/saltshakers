@@ -25,6 +25,7 @@ func (state *RulesActor) Receive(context actor.Context) {
 	case *actor.Started:
 		state.SetChildren(context,
 			actor.PropsFromProducer(HouseholdRulesProducer),
+			actor.PropsFromProducer(GroupRulesProducer),
 		)
 	default:
 		context.Forward(state.Children())
