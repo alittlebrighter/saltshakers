@@ -3,8 +3,9 @@
     <h1>{{ title }}</h1>
     <form>
       <input v-model="household.surname" type="text" placeholder="Surname" /><br>
-      <input v-model="household.email" type="text" placeholder="Email" />
-      <button v-on:click="save()">Save</button>
+      <input v-model="household.email" type="text" placeholder="Email" /><br>
+      <span>host</span><input v-model="household.host" type="checkbox" /><br>
+      <button v-on:click="save(household)">Save</button>
     </form>
   </div>
 </template>
@@ -38,8 +39,8 @@ export default {
     return data;
   },
   methods: {
-    save() {
-      backend.WailsActor.Request(JSON.stringify({type: "CreateHousehold", payload: this.household}))
+    save(hh) {
+      backend.WailsActor.Request(JSON.stringify({type: "CreateHousehold", payload: hh}))
         .then(result => {
           console.log("households:", result);
           self.households = result;

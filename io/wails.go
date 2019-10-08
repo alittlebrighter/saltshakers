@@ -3,7 +3,6 @@ package io
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 	"log"
 	"time"
 
@@ -50,11 +49,8 @@ func (state *WailsActor) Receive(context actor.Context) {
 	case *actor.Started:
 		context.Request(context.Parent(), messages.NewPIDEnvelope(messages.RulesPID, nil))
 	case *actor.Stopping:
-		fmt.Println("Stopping, wailsActor is about shut down")
 	case *actor.Stopped:
-		fmt.Println("Stopped, wailsActor and it's children are stopped")
 	case *actor.Restarting:
-		fmt.Println("Restarting, wailsActor is about restart")
 	}
 }
 
@@ -69,6 +65,7 @@ func (w *WailsActor) Request(msg string) (string, error) {
 		return "", err
 	}
 
+	// stupid we have to copy the unmarshal code just because of strict typing
 	var payload interface{}
 	switch envelope.ActionType {
 	case "CreateHousehold":
@@ -89,9 +86,14 @@ func (w *WailsActor) Request(msg string) (string, error) {
 			return "", err
 		}
 		payload = p
+	case "GenerateGroups":
+		p := messages.GenerateGroups{}
+		if err := json.Unmarshal(envelope.Payload, &p); err != nil {
+			return "", err
+		}
+		payload = p
 	}
 
-	log.Println(w.Name(), "making request, payload:", payload)
 	result, err := w.ctx.RequestFuture(w.rulesPID, payload, 5*time.Second).Result()
 	if err != nil {
 		return "", err

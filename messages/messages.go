@@ -34,6 +34,7 @@ type GetIOConfiguration struct{}
 type GetRulesConfiguration struct{}
 type GetPersistenceConfiguration struct{}
 
+// CreateHousehold upserts a household
 type CreateHousehold struct {
 	models.Household
 }
@@ -46,10 +47,15 @@ type QueryHouseholds struct {
 	Filters []struct{ Key, Value, Op string } `json:"filters"`
 }
 
-type UpdateHousehold struct {
-	models.Household
+type DeleteHousehold struct {
+	Id []byte `json:"id"`
 }
 
-type DeleteHousehold struct {
-	Id string
+type SaveGroups struct {
+	Groups []models.Group `json:"groups"`
+}
+
+type GenerateGroups struct {
+	TargetHouseholdCount uint8          `json:"targetHouseholdCount"`
+	Groups               []models.Group `json:"groups"`
 }

@@ -1,10 +1,14 @@
 package rules
 
 import (
+	"time"
+
 	"github.com/AsynkronIT/protoactor-go/actor"
 	"github.com/alittlebrighter/saltshakers/messages"
 	"github.com/alittlebrighter/saltshakers/utils"
 )
+
+const timeout = 2 * time.Second
 
 func Producer() actor.Actor {
 	return &RulesActor{BaseActor: utils.NewBaseActor("rules")}

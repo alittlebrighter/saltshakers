@@ -54,6 +54,11 @@ func (state *BoltDBActor) Receive(context actor.Context) {
 	case GetOne:
 		err := state.db.View(func(tx *bolt.Tx) error {
 			b := tx.Bucket([]byte(msg.EntityType))
+			if b == nil {
+				msg.Entity = nil
+				context.Respond(msg)
+				return nil
+			}
 
 			marshaled := b.Get(msg.Id)
 			json.Unmarshal(marshaled, msg.Entity)
@@ -65,7 +70,6 @@ func (state *BoltDBActor) Receive(context actor.Context) {
 			log.Println(state.Name(), err)
 		}
 	case Query: // only gets all for now
-		log.Println(state.Name(), ": querying", msg.EntityType)
 		err := state.db.View(func(tx *bolt.Tx) error {
 			msg.Entities = []interface{}{}
 
@@ -85,7 +89,7 @@ func (state *BoltDBActor) Receive(context actor.Context) {
 				// TODO apply filters
 
 				json.Unmarshal(v, &next)
-				msg.Entities = append(msg.Entities, next)
+				msg.Entities = append(msg.Entities, &next)
 			}
 
 			context.Respond(msg)

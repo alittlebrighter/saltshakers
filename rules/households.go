@@ -1,17 +1,12 @@
 package rules
 
 import (
-	"log"
-	"time"
-
 	"github.com/AsynkronIT/protoactor-go/actor"
 	"github.com/alittlebrighter/saltshakers/messages"
 	"github.com/alittlebrighter/saltshakers/models"
 	"github.com/alittlebrighter/saltshakers/persistence"
 	"github.com/alittlebrighter/saltshakers/utils"
 )
-
-const timeout = 2 * time.Second
 
 func HouseholdRulesProducer() actor.Actor {
 	return &HouseholdRulesActor{BaseActor: utils.NewBaseActor("rules.households")}
@@ -41,7 +36,6 @@ func (state *HouseholdRulesActor) Receive(context actor.Context) {
 		context.Respond(response.(persistence.GetOne).Entity)
 
 	case messages.QueryHouseholds:
-		log.Println(state.Name(), ": querying housholds")
 		response, _ := context.RequestFuture(state.persistence, persistence.Query{
 			EntityType: HouseholdEntity.String(),
 			Model:      models.Household{},
@@ -65,6 +59,7 @@ type EntityType string
 
 const (
 	HouseholdEntity EntityType = "Household"
+	GroupEntity     EntityType = "Group"
 )
 
 func (e EntityType) String() string {
