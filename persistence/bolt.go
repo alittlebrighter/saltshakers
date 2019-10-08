@@ -62,7 +62,6 @@ func (state *BoltDBActor) Receive(context actor.Context) {
 
 			marshaled := b.Get(msg.Id)
 			json.Unmarshal(marshaled, msg.Entity)
-			log.Println("got household", msg.Entity)
 			context.Respond(msg)
 			return nil
 		})
@@ -71,7 +70,7 @@ func (state *BoltDBActor) Receive(context actor.Context) {
 		}
 	case Query: // only gets all for now
 		err := state.db.View(func(tx *bolt.Tx) error {
-			msg.Entities = []interface{}{}
+			msg.Entities = []HasID{}
 
 			b := tx.Bucket([]byte(msg.EntityType))
 			if b == nil {
@@ -81,15 +80,11 @@ func (state *BoltDBActor) Receive(context actor.Context) {
 
 			c := b.Cursor()
 
-			empty := msg.Model
-
 			for k, v := c.First(); k != nil; k, v = c.Next() {
-				next := empty
+				next := msg.Model()
 
-				// TODO apply filters
-
-				json.Unmarshal(v, &next)
-				msg.Entities = append(msg.Entities, &next)
+				json.Unmarshal(v, next)
+				msg.Entities = append(msg.Entities, next)
 			}
 
 			context.Respond(msg)

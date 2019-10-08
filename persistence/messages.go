@@ -24,8 +24,8 @@ type GetOne struct {
 // Query with no Filters gets all values
 type Query struct {
 	EntityType string
-	Model      interface{} // should be a type literal
-	Entities   []interface{}
+	Model      func() HasID // should be a type literal
+	Entities   []HasID
 	Filters    []Filter
 }
 

@@ -31,14 +31,14 @@ func (state *HouseholdRulesActor) Receive(context actor.Context) {
 		response, _ := context.RequestFuture(state.persistence, persistence.GetOne{
 			EntityType: HouseholdEntity.String(),
 			Id:         msg.Id,
-			Entity:     &models.HouseholdImpl{&models.Household{}},
+			Entity:     &models.HouseholdImpl{new(models.Household)},
 		}, timeout).Result()
 		context.Respond(response.(persistence.GetOne).Entity)
 
 	case messages.QueryHouseholds:
 		response, _ := context.RequestFuture(state.persistence, persistence.Query{
 			EntityType: HouseholdEntity.String(),
-			Model:      models.Household{},
+			Model:      func() persistence.HasID { return &models.HouseholdImpl{new(models.Household)} },
 		}, timeout).Result()
 		context.Respond(response.(persistence.Query).Entities)
 

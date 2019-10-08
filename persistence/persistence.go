@@ -1,8 +1,6 @@
 package persistence
 
 import (
-	"log"
-
 	"github.com/AsynkronIT/protoactor-go/actor"
 	"github.com/alittlebrighter/saltshakers/messages"
 	"github.com/alittlebrighter/saltshakers/utils"
@@ -18,7 +16,6 @@ type PersistenceActor struct {
 }
 
 func (state *PersistenceActor) Receive(context actor.Context) {
-	log.Println(state.Name(), "received message:", context.Message())
 main:
 	switch msg := context.Message().(type) {
 	case *messages.PIDEnvelope:
@@ -41,7 +38,6 @@ main:
 
 		context.Request(context.Parent(), messages.NewPIDEnvelope(messages.ConfigurationPID, nil))
 	default:
-		log.Println(state.Name(), "forwarding message to children")
 		context.Forward(state.Children())
 	}
 }

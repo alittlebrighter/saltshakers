@@ -27,20 +27,23 @@ func (state *GroupRulesActor) Receive(context actor.Context) {
 	case messages.GenerateGroups:
 		groupsFuture := context.RequestFuture(state.persistence, persistence.Query{
 			EntityType: GroupEntity.String(),
-			Model:      models.Group{},
+			Model:      func() persistence.HasID { return &models.GroupImpl{new(models.Group)} },
 		}, timeout)
-		householdsFuture := context.RequestFuture(context.Parent(), messages.QueryHouseholds{}, timeout)
+		householdsFuture := context.RequestFuture(state.persistence, persistence.Query{
+			EntityType: HouseholdEntity.String(),
+			Model:      func() persistence.HasID { return &models.HouseholdImpl{new(models.Household)} },
+		}, timeout)
 
 		groupsResult, _ := ArrayFromQueryFuture(groupsFuture)
 		householdsResult, _ := ArrayFromQueryFuture(householdsFuture)
 
-		historicalGroups := make([]models.Group, len(groupsResult))
+		historicalGroups := make([]*models.Group, len(groupsResult))
 		for i, g := range groupsResult {
-			historicalGroups[i] = g.(models.Group)
+			historicalGroups[i] = g.(*models.GroupImpl).Group
 		}
 		households := []*models.Household{}
 		for _, hh := range householdsResult {
-			household := hh.(*models.Household)
+			household := hh.(*models.HouseholdImpl).Household
 			if household.GetActive() {
 				households = append(households, household)
 			}
@@ -57,9 +60,17 @@ func (state *GroupRulesActor) Receive(context actor.Context) {
 
 		now := &timestamp.Timestamp{Seconds: time.Now().Unix()}
 		groups := make([]*models.Group, groupCount)
-		for i, group := range groups {
-			group.HostId = hostScores[i].Id
-			group.DateAssigned = now
+		for i := range groups {
+			groups[i] = &models.Group{
+				HostId:       hostScores[i].Id,
+				DateAssigned: now,
+			}
+
+			households = FilterHouseholds(households, []models.HouseholdFilter{
+				func(hh *models.Household) bool {
+					return string(hh.GetId()) != string(groups[i].HostId)
+				},
+			})
 		}
 		context.Respond(groups)
 	case *messages.PIDEnvelope:
@@ -73,7 +84,7 @@ func (state *GroupRulesActor) Receive(context actor.Context) {
 }
 
 // ScoreHosts returns a list of hosts with a score attached low scores should be selected to host next
-func ScoreHosts(hosts [][]byte, groups []models.Group) []Score {
+func ScoreHosts(hosts [][]byte, groups []*models.Group) []Score {
 	// initialize map
 	scoreMap := map[string]int{}
 	for _, host := range hosts {
@@ -128,7 +139,7 @@ func GetHostsFromHouseholds(households []*models.Household) [][]byte {
 	return hosts
 }
 
-func ArrayFromQueryFuture(future *actor.Future) ([]interface{}, error) {
+func ArrayFromQueryFuture(future *actor.Future) ([]persistence.HasID, error) {
 	result, err := future.Result()
 	if err != nil {
 		return nil, err
