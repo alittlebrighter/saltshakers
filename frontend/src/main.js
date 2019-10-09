@@ -12,11 +12,13 @@ Vue.use(VueRouter)
 
 import Households from "./pages/Households.vue";
 import AddHousehold from "./pages/AddHousehold.vue";
+import EditGroup from "./pages/EditGroup.vue";
 
 const router = new VueRouter({
   routes: [
     { path: '/households', component: Households },
-    { path: '/add-household/:id', component: AddHousehold, props: { id: null } }
+    { path: '/add-household/:id', component: AddHousehold, props: { id: null } },
+    { path: '/create-groups', component: EditGroup},
   ]
 })
 
