@@ -13,14 +13,18 @@
 </template>
 
 <script>
+import store from '../store/store';
+import { select } from '../store/store';
+import { getHouseholds } from '../store/actions';
+
 export default {
   data() {
     const self = this;
+    store.subscribe(() => {
+      self.households = Object.values(select("households"));
+    });
 
-    backend.WailsActor.Request(JSON.stringify({type: "QueryHouseholds", payload: {filters: []}}))
-      .then(function(toParse) {
-        self.households = JSON.parse(toParse);
-      });
+    this.getHouseholds();
 
     return {
       title: "Households",
@@ -28,7 +32,7 @@ export default {
     };
   },
   methods: {
-    
+    getHouseholds: () => store.dispatch(getHouseholds())
   },
   components: {}
 };

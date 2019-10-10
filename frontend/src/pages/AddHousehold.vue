@@ -12,42 +12,40 @@
 </template>
 
 <script>
+import store from '../store/store';
+import { select } from '../store/store';
+import { saveHousehold, getHousehold } from '../store/actions';
+
 export default {
   props: {
     id: null
   },
   data() {
     const emptyHH = {
-      surname: "",
-      email: "",
-      host: false,
-      active: true
-    };
+        surname: "",
+        email: "",
+        host: false,
+        active: true
+      };
 
-    console.log("hh id:", this.$route.params.id)
     if (this.$route.params.id) {
       const self = this;
-      backend.WailsActor.Request(JSON.stringify({type: "GetHousehold", payload: {id: this.$route.params.id}}))
-        .then(result => {
-          console.log("result:", result);
-          self.household = JSON.parse(result) || emptyHH;
-        })
+      store.subscribe(() => {
+        self.household = select("households", self.$route.params.id) || emptyHH;
+      })
+
+      store.dispatch(getHousehold(this.$route.params.id));
     }
 
     const data = {
       title: "Add/Edit Household",
       household: emptyHH
-    }
-
+    };
     return data;
   },
   methods: {
     save(hh) {
-      backend.WailsActor.Request(JSON.stringify({type: "CreateHousehold", payload: hh}))
-        .then(result => {
-          console.log("households:", result);
-          self.households = result;
-        });
+      store.dispatch(saveHousehold(hh));
     }
   },
   components: {}

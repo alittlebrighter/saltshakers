@@ -1,19 +1,20 @@
 <template>
-  <div>
-    <div v-for="group in groups" class="group-box" :key="group.host_id">
-    <draggable v-model="group.household_ids">
+<div>
+  <draggable v-for="group in groups" tag="div" class="group-box" :key="group.host_id" v-bind="dragOptions" :move="onMove" @start="isDragging=true" @end="isDragging=false">
     <transition-group>
-        <div v-for="element in group.household_ids" :key="element">
-            {{element}}
-        </div>
+      <div v-for="hhId in group.household_ids" :key="hhId">
+          {{households[hhId].surname}}
+      </div>
     </transition-group>
   </draggable>
-    </div>
-  </div>
+</div>
 </template>
 
 <script>
 import draggable from "vuedraggable";
+
+import store from '../store/store';
+import { generateGroups, getHouseholds } from '../store/actions';
 
 export default {
   name: "EditGroups",
@@ -24,30 +25,35 @@ export default {
       draggable
   },
   data() {
-    self = this;
+    const self = this;
+    store.subscribe(() => {
+      const state = store.getState();
 
-    backend.WailsActor.Request(JSON.stringify({type: "GenerateGroups", payload: {targetHouseholdCount: 4}}))
-      .then(result => {
-        self.groups = JSON.parse(result);
-        console.log(self.groups);
-      })
-      .catch(err => {
-        console.log("error generating groups:", err);
-      });
+      self.households = state.households;
+      self.groups = state.activeGroups;
+    });
+
+    if (Object.keys(store.getState().households).length === 0) {
+      store.dispatch(getHouseholds());
+    }
+    this.generate(4);
 
     const data = {
       groups: [],
+      households: {},
       editable: true,
       isDragging: false,
       delayedDragging: false
     }
-
     return data;
   },
   methods: {
-    save(hh) {
+    generate(hhCount) {
+      store.dispatch(generateGroups(hhCount));
+    },
+    save(groups) {
       var self = this;
-      backend.WailsActor.Request(JSON.stringify({type: "SaveGroups", payload: hh}))
+      backend.WailsActor.Request(JSON.stringify({type: "SaveGroups", payload: groups}))
         .then(result => {
           self.groups = JSON.parse(result);
         });
