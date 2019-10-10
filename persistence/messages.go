@@ -1,6 +1,6 @@
 package persistence
 
-type HasID interface {
+type HasId interface {
 	GetId() []byte
 	SetId([]byte)
 }
@@ -11,21 +11,27 @@ type PersistenceEnvelope struct {
 
 type Create struct {
 	EntityType string
-	Entity     HasID
+	Entity     HasId
+	Upsert     bool
+}
+
+type CreateMany struct {
+	EntityType string
+	Entities   []HasId
 	Upsert     bool
 }
 
 type GetOne struct {
 	EntityType string
 	Id         []byte
-	Entity     HasID
+	Entity     HasId
 }
 
 // Query with no Filters gets all values
 type Query struct {
 	EntityType string
-	Model      func() HasID // should be a type literal
-	Entities   []HasID
+	Model      func() HasId // should be a type literal
+	Entities   []HasId
 	Filters    []Filter
 }
 
@@ -39,7 +45,7 @@ type CompareFunc func(a interface{}, b interface{}) bool
 
 type Update struct {
 	EntityType string
-	Entity     HasID
+	Entity     HasId
 }
 
 type Delete struct {

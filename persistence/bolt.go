@@ -27,30 +27,19 @@ type BoltDBActor struct {
 func (state *BoltDBActor) Receive(context actor.Context) {
 	switch msg := context.Message().(type) {
 	case Create:
-		err := state.db.Update(func(tx *bolt.Tx) error {
-			b, err := tx.CreateBucketIfNotExists([]byte(msg.EntityType))
-			if err != nil {
-				return err
-			}
-
-			if !msg.Upsert || len(msg.Entity.GetId()) == 0 {
-				id, err := b.NextSequence()
-				if err != nil {
-					return err
-				}
-				msg.Entity.SetId(itob(id))
-			}
-
-			marshaled, err := json.Marshal(msg.Entity)
-			if err != nil {
-				return err
-			}
-			return b.Put(msg.Entity.GetId(), marshaled)
-		})
+		err := state.SaveMany(&CreateMany{EntityType: msg.EntityType, Entities: []HasId{msg.Entity}, Upsert: msg.Upsert})
 		if err != nil {
-			log.Println(state.Name(), err)
+			log.Println(state.Name(), msg, err)
 		}
 		context.Respond(msg)
+
+	case CreateMany:
+		err := state.SaveMany(&msg)
+		if err != nil {
+			log.Println(state.Name(), msg, err)
+		}
+		context.Respond(msg)
+
 	case GetOne:
 		err := state.db.View(func(tx *bolt.Tx) error {
 			b := tx.Bucket([]byte(msg.EntityType))
@@ -68,9 +57,10 @@ func (state *BoltDBActor) Receive(context actor.Context) {
 		if err != nil {
 			log.Println(state.Name(), err)
 		}
+
 	case Query: // only gets all for now
 		err := state.db.View(func(tx *bolt.Tx) error {
-			msg.Entities = []HasID{}
+			msg.Entities = []HasId{}
 
 			b := tx.Bucket([]byte(msg.EntityType))
 			if b == nil {
@@ -94,6 +84,7 @@ func (state *BoltDBActor) Receive(context actor.Context) {
 		if err != nil {
 			log.Println(state.Name(), err)
 		}
+
 	case []configuration.PersistenceConfig:
 		for _, config := range msg {
 			if config.Kind() != configuration.Bolt {
@@ -101,6 +92,7 @@ func (state *BoltDBActor) Receive(context actor.Context) {
 			}
 			state.init(config)
 		}
+
 	case *actor.Started:
 		state.buckets = make(map[string]bool)
 		if len(state.dbPath) == 0 {
@@ -112,13 +104,42 @@ func (state *BoltDBActor) Receive(context actor.Context) {
 		if err != nil {
 			log.Println(state.Name(), err)
 		}
+
 	case *actor.Stopped:
 		state.db.Close()
+
 	case *actor.Restarting:
 		state.Restarting(context, msg)
-	default:
-		context.Forward(state.Children())
 	}
+}
+
+func (state *BoltDBActor) SaveMany(toCreate *CreateMany) error {
+	return state.db.Update(func(tx *bolt.Tx) error {
+		b, err := tx.CreateBucketIfNotExists([]byte(toCreate.EntityType))
+		if err != nil {
+			return err
+		}
+
+		for i, entity := range toCreate.Entities {
+
+			if !toCreate.Upsert || entity.GetId() == nil || len(entity.GetId()) == 0 {
+				id, err := b.NextSequence()
+				if err != nil {
+					return err
+				}
+				toCreate.Entities[i].SetId(itob(id))
+			}
+
+			marshaled, err := json.Marshal(toCreate.Entities[i])
+			if err != nil {
+				return err
+			}
+			if err = b.Put(entity.GetId(), marshaled); err != nil {
+				return err
+			}
+		}
+		return nil
+	})
 }
 
 func (state *BoltDBActor) init(config configuration.PersistenceConfig) {
