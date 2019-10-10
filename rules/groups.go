@@ -1,7 +1,6 @@
 package rules
 
 import (
-	"log"
 	"sort"
 	"time"
 
@@ -28,11 +27,11 @@ func (state *GroupRulesActor) Receive(context actor.Context) {
 	case messages.GenerateGroups:
 		groupsFuture := context.RequestFuture(state.persistence, persistence.Query{
 			EntityType: GroupEntity.String(),
-			Model:      func() persistence.HasID { return &models.GroupImpl{new(models.Group)} },
+			Model:      func() persistence.HasId { return &models.GroupImpl{new(models.Group)} },
 		}, timeout)
 		householdsFuture := context.RequestFuture(state.persistence, persistence.Query{
 			EntityType: HouseholdEntity.String(),
-			Model:      func() persistence.HasID { return &models.HouseholdImpl{new(models.Household)} },
+			Model:      func() persistence.HasId { return &models.HouseholdImpl{new(models.Household)} },
 		}, timeout)
 
 		groupsResult, _ := ArrayFromQueryFuture(groupsFuture)
@@ -80,7 +79,6 @@ func (state *GroupRulesActor) Receive(context actor.Context) {
 			otherHHScores := ScoreGroup(groups[i].GetHostId(), households, historicalGroups)
 			By(scoreAsc).Sort(otherHHScores)
 
-			log.Println(state.Name(), "adding households", len(households), int(msg.TargetHouseholdCount)-1)
 			if len(households) >= int(msg.TargetHouseholdCount)-1 {
 				for _, score := range otherHHScores[:msg.TargetHouseholdCount-1] {
 					groups[i].HouseholdIds = append(groups[i].HouseholdIds, score.Id)
@@ -228,7 +226,7 @@ func GetHostsFromHouseholds(households []*models.Household) [][]byte {
 	return hosts
 }
 
-func ArrayFromQueryFuture(future *actor.Future) ([]persistence.HasID, error) {
+func ArrayFromQueryFuture(future *actor.Future) ([]persistence.HasId, error) {
 	result, err := future.Result()
 	if err != nil {
 		return nil, err

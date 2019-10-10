@@ -38,7 +38,7 @@ func (state *HouseholdRulesActor) Receive(context actor.Context) {
 	case messages.QueryHouseholds:
 		response, _ := context.RequestFuture(state.persistence, persistence.Query{
 			EntityType: HouseholdEntity.String(),
-			Model:      func() persistence.HasID { return &models.HouseholdImpl{new(models.Household)} },
+			Model:      func() persistence.HasId { return &models.HouseholdImpl{new(models.Household)} },
 		}, timeout).Result()
 		context.Respond(response.(persistence.Query).Entities)
 
