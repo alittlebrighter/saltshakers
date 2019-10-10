@@ -31,11 +31,7 @@ type GroupImpl struct {
 func (g *GroupImpl) GetId() []byte {
 	seconds := make([]byte, 8)
 	binary.BigEndian.PutUint64(seconds, uint64(g.DateAssigned.GetSeconds()))
-	id := append(seconds, g.GetHostId()...)
-	for _, hh := range g.GetHouseholdIds() {
-		id = append(id, hh...)
-	}
-	return id
+	return append(seconds, g.GetHostId()...)
 }
 
 func (g *GroupImpl) SetId(id []byte) {
