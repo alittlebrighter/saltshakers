@@ -30,6 +30,14 @@ var appConfiguration = AppConfig{
 				},
 			},
 		},
+		IOConfig{
+			kind: HttpRest,
+			GenericConfig: GenericConfig{
+				Params: map[string]interface{}{
+					"serveAt": "localhost:24351",
+				},
+			},
+		},
 	},
 	Persistence: []PersistenceConfig{
 		PersistenceConfig{
@@ -105,6 +113,7 @@ type IOKind uint8
 
 const (
 	Wails IOKind = iota
+	HttpRest
 )
 
 type PersistenceKind uint8

@@ -1,5 +1,4 @@
 //go:generate protoc -I proto/ --go_out=models proto/models.proto
-
 package main
 
 import (
