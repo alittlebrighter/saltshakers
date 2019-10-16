@@ -37,6 +37,9 @@ main:
 		)
 
 		context.Request(context.Parent(), messages.NewPIDEnvelope(messages.ConfigurationPID, nil))
+	case *actor.Stopping:
+		state.Stopping(context)
+	case *actor.Stopped:
 	default:
 		context.Forward(state.Children())
 	}

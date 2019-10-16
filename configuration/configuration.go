@@ -2,8 +2,6 @@ package configuration
 
 import (
 	"github.com/AsynkronIT/protoactor-go/actor"
-	"github.com/leaanthony/mewn"
-	"github.com/wailsapp/wails"
 
 	"github.com/alittlebrighter/saltshakers/messages"
 )
@@ -19,14 +17,16 @@ var appConfiguration = AppConfig{
 			kind: Wails,
 			GenericConfig: GenericConfig{
 				Params: map[string]interface{}{
-					"wailsConfig": wails.AppConfig{
-						Width:  1024,
-						Height: 768,
-						Title:  "Saltshakers",
-						JS:     mewn.String("../frontend/dist/app.js"),
-						CSS:    mewn.String("../frontend/dist/app.css"),
-						Colour: "#131313",
-					},
+					/*
+						"wailsConfig": wails.AppConfig{
+							Width:  1024,
+							Height: 768,
+							Title:  "Saltshakers",
+							JS:     mewn.String("../frontend/dist/app.js"),
+							CSS:    mewn.String("../frontend/dist/app.css"),
+							Colour: "#131313",
+						},
+					*/
 				},
 			},
 		},

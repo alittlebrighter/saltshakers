@@ -85,6 +85,19 @@ func (state *BoltDBActor) Receive(context actor.Context) {
 			log.Println(state.Name(), err)
 		}
 
+	case Delete:
+		log.Println("delete", msg)
+		err := state.db.Update(func(tx *bolt.Tx) error {
+			b := tx.Bucket([]byte(msg.EntityType))
+			if b == nil {
+				log.Println("bucket not found", msg.EntityType)
+				return nil
+			}
+			log.Println("deleting", msg.Id)
+			return b.Delete(msg.Id)
+		})
+		context.Respond(err)
+
 	case []configuration.PersistenceConfig:
 		for _, config := range msg {
 			if config.Kind() != configuration.Bolt {
@@ -107,7 +120,6 @@ func (state *BoltDBActor) Receive(context actor.Context) {
 
 	case *actor.Stopped:
 		state.db.Close()
-
 	case *actor.Restarting:
 		state.Restarting(context, msg)
 	}

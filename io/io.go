@@ -35,11 +35,14 @@ main:
 
 	case *actor.Started:
 		state.SetChildren(context,
-			actor.PropsFromProducer(WailsProducer),
-			//actor.PropsFromProducer(HttpRestProducer),
+			//actor.PropsFromProducer(WailsProducer),
+			actor.PropsFromProducer(HttpRestProducer),
 		)
 
 		context.Request(context.Parent(), messages.NewPIDEnvelope(messages.ConfigurationPID, nil))
+	case *actor.Stopping:
+		state.Stopping(context)
+	case *actor.Stopped:
 	default:
 		context.Forward(state.Children())
 	}

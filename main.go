@@ -4,6 +4,7 @@ package main
 import (
 	"os"
 	"os/signal"
+	"time"
 
 	"github.com/AsynkronIT/protoactor-go/actor"
 )
@@ -18,8 +19,9 @@ func main() {
 	manager := managerContext.Spawn(managerProps)
 
 	signals := make(chan os.Signal)
-	signal.Notify(signals, os.Interrupt)
+	signal.Notify(signals, os.Interrupt, os.Kill)
 
 	<-signals
 	managerContext.Stop(manager)
+	time.Sleep(time.Second)
 }

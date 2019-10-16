@@ -42,6 +42,13 @@ func (state *HouseholdRulesActor) Receive(context actor.Context) {
 		}, timeout).Result()
 		context.Respond(response.(persistence.Query).Entities)
 
+	case messages.DeleteHousehold:
+		_, err := context.RequestFuture(state.persistence, persistence.Delete{
+			Id:         msg.Id,
+			EntityType: HouseholdEntity.String(),
+		}, timeout).Result()
+		context.Respond(err)
+
 	case *messages.PIDEnvelope:
 		switch msg.Type() {
 		case messages.PersistencePID:

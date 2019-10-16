@@ -1,7 +1,10 @@
 package utils
 
 import (
+	"strconv"
+
 	"github.com/AsynkronIT/protoactor-go/actor"
+	"github.com/AsynkronIT/protoactor-go/actor/middleware"
 	"github.com/AsynkronIT/protoactor-go/router"
 	"github.com/alittlebrighter/saltshakers/messages"
 )
@@ -26,7 +29,8 @@ func (a *BaseActor) Name() string {
 func (a *BaseActor) SetChildren(context actor.Context, childProps ...*actor.Props) {
 	impls := make([]*actor.PID, len(childProps))
 	for i, props := range childProps {
-		impls[i] = context.Spawn(props)
+		iStr := strconv.Itoa(i)
+		impls[i], _ = context.SpawnNamed(props.WithReceiverMiddleware(middleware.Logger), a.Name()+"_"+iStr)
 	}
 
 	a.childProps = router.NewBroadcastGroup(impls...)
@@ -54,10 +58,14 @@ func (state *BaseActor) GetPID(pidType messages.PIDType) *actor.PID {
 	return state.knownPIDs[pidType]
 }
 
+func (state *BaseActor) Stopping(context actor.Context) {
+	context.Stop(state.Children())
+}
+
 func (state *BaseActor) Restarting(context actor.Context, msg *actor.Restarting) {
 	state.restarts++
 
 	if state.restarts > 3 {
-		context.Poison(context.Self())
+		context.Stop(context.Self())
 	}
 }

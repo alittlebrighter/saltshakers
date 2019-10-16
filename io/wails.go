@@ -1,5 +1,6 @@
 package io
 
+/*
 import (
 	"encoding/json"
 	"errors"
@@ -113,3 +114,4 @@ type ActionEnvelope struct {
 	ActionType string          `json:"type"`
 	Payload    json.RawMessage `json:"payload"`
 }
+*/

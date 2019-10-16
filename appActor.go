@@ -26,21 +26,21 @@ func (state *AppActor) Receive(context actor.Context) {
 			context.Respond(messages.NewPIDEnvelope(messages.PersistencePID, state.persistence))
 		}
 	case *actor.Started:
-		// start in dependency order, config has no dependencies (at the moment)
-		state.config = context.Spawn(actor.PropsFromProducer(configuration.Producer))
-		state.persistence = context.Spawn(actor.PropsFromProducer(persistence.Producer))
-		state.rules = context.Spawn(actor.PropsFromProducer(rules.Producer))
-		state.io = context.Spawn(actor.PropsFromProducer(io.Producer))
+		state.startChildren(context)
 	case *actor.Stopping:
-		/*
-			state.io.Stop()
-			state.persistence.Stop()
-			state.rules.Stop()
-			state.config.Stop()
-		*/
-	case *actor.Stopped:
-
+		context.Stop(state.io)
+		context.Stop(state.rules)
+		context.Stop(state.persistence)
+		context.Stop(state.config)
 	case *actor.Restarting:
-
+		state.startChildren(context)
 	}
+}
+
+func (state *AppActor) startChildren(context actor.Context) {
+	// start in dependency order, config has no dependencies (at the moment)
+	state.config = context.Spawn(actor.PropsFromProducer(configuration.Producer))
+	state.persistence = context.Spawn(actor.PropsFromProducer(persistence.Producer))
+	state.rules = context.Spawn(actor.PropsFromProducer(rules.Producer))
+	state.io = context.Spawn(actor.PropsFromProducer(io.Producer))
 }
