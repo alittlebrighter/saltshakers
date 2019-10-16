@@ -2,6 +2,7 @@ package io
 
 import (
 	ctxLib "context"
+	"encoding/base64"
 	"log"
 	"net/http"
 	"strconv"
@@ -95,11 +96,13 @@ func (state *HttpRestActor) GetHouseholds(c echo.Context) error {
 }
 
 func (state *HttpRestActor) GetHousehold(c echo.Context) error {
-	return state.sendRequest(c, messages.GetHousehold{Id: []byte(c.Param("id"))})
+	id, _ := base64.StdEncoding.DecodeString(c.Param("id"))
+	return state.sendRequest(c, messages.GetHousehold{Id: id})
 }
 
 func (state *HttpRestActor) DeleteHousehold(c echo.Context) error {
-	return state.sendRequest(c, messages.DeleteHousehold{Id: []byte(c.Param("id"))})
+	id, _ := base64.StdEncoding.DecodeString(c.Param("id"))
+	return state.sendRequest(c, messages.DeleteHousehold{Id: id})
 }
 
 func (state *HttpRestActor) GenerateGroups(c echo.Context) error {

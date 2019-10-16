@@ -21,7 +21,8 @@ export default {
   data() {
     const self = this;
     store.subscribe(() => {
-      self.households = Object.values(select("households"));
+      // TODO: figure out why we need to filter for undefined
+      self.households = Object.values(select("households")).filter(hh => hh.id !== undefined);
     });
 
     this.getHouseholds();

@@ -1,12 +1,12 @@
 package persistence
 
 import (
-	"encoding/binary"
 	"encoding/json"
 	"log"
 
 	"github.com/AsynkronIT/protoactor-go/actor"
-	bolt "go.etcd.io/bbolt"
+	"github.com/boltdb/bolt"
+	"github.com/rs/xid"
 
 	"github.com/alittlebrighter/saltshakers/configuration"
 	"github.com/alittlebrighter/saltshakers/utils"
@@ -50,12 +50,14 @@ func (state *BoltDBActor) Receive(context actor.Context) {
 			}
 
 			marshaled := b.Get(msg.Id)
-			json.Unmarshal(marshaled, msg.Entity)
-			context.Respond(msg)
-			return nil
+			err := json.Unmarshal(marshaled, msg.Entity)
+			return err
 		})
 		if err != nil {
 			log.Println(state.Name(), err)
+			context.Respond(err)
+		} else {
+			context.Respond(msg)
 		}
 
 	case Query: // only gets all for now
@@ -77,25 +79,28 @@ func (state *BoltDBActor) Receive(context actor.Context) {
 				msg.Entities = append(msg.Entities, next)
 			}
 
-			context.Respond(msg)
-
 			return nil
 		})
 		if err != nil {
 			log.Println(state.Name(), err)
+			context.Respond(err)
+		} else {
+			context.Respond(msg)
 		}
 
 	case Delete:
-		log.Println("delete", msg)
 		err := state.db.Update(func(tx *bolt.Tx) error {
 			b := tx.Bucket([]byte(msg.EntityType))
 			if b == nil {
 				log.Println("bucket not found", msg.EntityType)
 				return nil
 			}
-			log.Println("deleting", msg.Id)
+
 			return b.Delete(msg.Id)
 		})
+		if err != nil {
+			log.Println("could not delete entity", msg.EntityType, string(msg.Id))
+		}
 		context.Respond(err)
 
 	case []configuration.PersistenceConfig:
@@ -135,11 +140,7 @@ func (state *BoltDBActor) SaveMany(toCreate *CreateMany) error {
 		for i, entity := range toCreate.Entities {
 
 			if !toCreate.Upsert || entity.GetId() == nil || len(entity.GetId()) == 0 {
-				id, err := b.NextSequence()
-				if err != nil {
-					return err
-				}
-				toCreate.Entities[i].SetId(itob(id))
+				toCreate.Entities[i].SetId([]byte(xid.New().String()))
 			}
 
 			marshaled, err := json.Marshal(toCreate.Entities[i])
@@ -162,10 +163,4 @@ func (state *BoltDBActor) init(config configuration.PersistenceConfig) {
 	if err != nil {
 		log.Println(state.Name(), err)
 	}
-}
-
-func itob(v uint64) []byte {
-	b := make([]byte, 8)
-	binary.BigEndian.PutUint64(b, v)
-	return b
 }

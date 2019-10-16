@@ -20,6 +20,10 @@ type HouseholdRulesActor struct {
 func (state *HouseholdRulesActor) Receive(context actor.Context) {
 	switch msg := context.Message().(type) {
 	case messages.CreateHousehold:
+		if msg.Household.GetSurname() == "" {
+			context.Respond("cannot save household with no surname")
+			return
+		}
 		response, _ := context.RequestFuture(state.persistence, persistence.Create{
 			EntityType: HouseholdEntity.String(),
 			Entity:     &models.HouseholdImpl{&msg.Household},
