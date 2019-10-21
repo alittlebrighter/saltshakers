@@ -96,12 +96,16 @@ func (state *BoltDBActor) Receive(context actor.Context) {
 				return nil
 			}
 
-			return b.Delete(msg.Id)
+			errs := make([]error, len(msg.Ids))
+			for i, id := range msg.Ids {
+				errs[i] = b.Delete(id)
+			}
+			context.Respond(errs)
+			return nil
 		})
 		if err != nil {
-			log.Println("could not delete entity", msg.EntityType, string(msg.Id))
+			log.Println("could not delete entity", msg.EntityType, msg.Ids)
 		}
-		context.Respond(err)
 
 	case []configuration.PersistenceConfig:
 		for _, config := range msg {

@@ -30,7 +30,7 @@ export default {
         active: true
       };
 
-    if (this.$route.params.id) {
+    if (this.$route.params.id !== "null") {
       const self = this;
       store.subscribe(() => {
         self.household = select("households", self.$route.params.id) || emptyHH;

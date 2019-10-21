@@ -7,17 +7,17 @@ hhHandlers[SET_HOUSEHOLDS] = (state, action) => {
         const hh = action.payload[i];
         state[hh.id] = hh;
     }
-    return state;
+    return {...state};
 }
 
 hhHandlers[UPSERT_HOUSEHOLD] = (state, action) => {
     state[action.payload.id] = action.payload;
-    return state;
+    return {...state};
 }
 
 hhHandlers[DELETE_HOUSEHOLD] = (state, action) => {
     delete state[action.payload];
-    return state;
+    return {...state};
 }
 
 function householdsReducer(state = {}, action) {

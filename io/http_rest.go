@@ -14,6 +14,7 @@ import (
 
 	"github.com/alittlebrighter/saltshakers/configuration"
 	"github.com/alittlebrighter/saltshakers/messages"
+	"github.com/alittlebrighter/saltshakers/models"
 	"github.com/alittlebrighter/saltshakers/utils"
 )
 
@@ -69,12 +70,14 @@ func (state *HttpRestActor) startServer(serveAt string) {
 
 	const prefix = "/api"
 
-	state.server.POST(prefix+"/households", state.CreateHousehold)
+	state.server.POST(prefix+"/households", state.SaveHousehold)
 	state.server.GET(prefix+"/households", state.GetHouseholds)
 	state.server.GET(prefix+"/households/:id", state.GetHousehold)
 	state.server.DELETE(prefix+"/households/:id", state.DeleteHousehold)
 
 	state.server.GET(prefix+"/groups/generate", state.GenerateGroups)
+	state.server.POST(prefix+"/groups", state.SaveGroups)
+	state.server.GET(prefix+"/groups", state.GetGroups)
 
 	go func() {
 		log.Println(state.Name(), "server exited with:", state.server.Start(serveAt))
@@ -82,8 +85,8 @@ func (state *HttpRestActor) startServer(serveAt string) {
 	}()
 }
 
-func (state *HttpRestActor) CreateHousehold(c echo.Context) error {
-	var payload messages.CreateHousehold
+func (state *HttpRestActor) SaveHousehold(c echo.Context) error {
+	var payload messages.SaveHousehold
 	if err := c.Bind(&payload); err != nil {
 		c.String(http.StatusBadRequest, "could not parse request: "+err.Error())
 	}
@@ -91,18 +94,40 @@ func (state *HttpRestActor) CreateHousehold(c echo.Context) error {
 	return state.sendRequest(c, payload)
 }
 
+func (state *HttpRestActor) SaveGroups(c echo.Context) error {
+	var payload []*models.Group
+	if err := c.Bind(&payload); err != nil {
+		c.String(http.StatusBadRequest, "could not parse request: "+err.Error())
+	}
+
+	return state.sendRequest(c, messages.SaveGroups{Groups: payload})
+}
+
 func (state *HttpRestActor) GetHouseholds(c echo.Context) error {
-	return state.sendRequest(c, messages.QueryHouseholds{})
+	return state.sendRequest(c, messages.Query{Entity: messages.HouseholdEntity})
+}
+
+func (state *HttpRestActor) GetGroups(c echo.Context) error {
+	return state.sendRequest(c, messages.Query{Entity: messages.GroupEntity})
 }
 
 func (state *HttpRestActor) GetHousehold(c echo.Context) error {
-	id, _ := base64.StdEncoding.DecodeString(c.Param("id"))
+	id, _ := ParseBytesFromURL(c.Param("id"))
 	return state.sendRequest(c, messages.GetHousehold{Id: id})
 }
 
 func (state *HttpRestActor) DeleteHousehold(c echo.Context) error {
-	id, _ := base64.StdEncoding.DecodeString(c.Param("id"))
+	id, _ := ParseBytesFromURL(c.Param("id"))
 	return state.sendRequest(c, messages.DeleteHousehold{Id: id})
+}
+
+func (state *HttpRestActor) DeleteGroup(c echo.Context) error {
+	var payload []*models.Group
+	if err := c.Bind(&payload); err != nil {
+		c.String(http.StatusBadRequest, "could not parse request: "+err.Error())
+	}
+
+	return state.sendRequest(c, messages.DeleteGroups{Groups: payload})
 }
 
 func (state *HttpRestActor) GenerateGroups(c echo.Context) error {
@@ -116,4 +141,8 @@ func (state *HttpRestActor) sendRequest(c echo.Context, payload interface{}) err
 		c.String(http.StatusInternalServerError, err.Error())
 	}
 	return c.JSON(http.StatusOK, result)
+}
+
+func ParseBytesFromURL(param string) ([]byte, error) {
+	return base64.StdEncoding.DecodeString(param)
 }

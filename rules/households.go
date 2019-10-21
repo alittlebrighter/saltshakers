@@ -19,13 +19,13 @@ type HouseholdRulesActor struct {
 
 func (state *HouseholdRulesActor) Receive(context actor.Context) {
 	switch msg := context.Message().(type) {
-	case messages.CreateHousehold:
+	case messages.SaveHousehold:
 		if msg.Household.GetSurname() == "" {
 			context.Respond("cannot save household with no surname")
 			return
 		}
 		response, _ := context.RequestFuture(state.persistence, persistence.Create{
-			EntityType: HouseholdEntity.String(),
+			EntityType: messages.HouseholdEntity.String(),
 			Entity:     &models.HouseholdImpl{&msg.Household},
 			Upsert:     true,
 		}, timeout).Result()
@@ -33,23 +33,27 @@ func (state *HouseholdRulesActor) Receive(context actor.Context) {
 
 	case messages.GetHousehold:
 		response, _ := context.RequestFuture(state.persistence, persistence.GetOne{
-			EntityType: HouseholdEntity.String(),
+			EntityType: messages.HouseholdEntity.String(),
 			Id:         msg.Id,
 			Entity:     &models.HouseholdImpl{new(models.Household)},
 		}, timeout).Result()
 		context.Respond(response.(persistence.GetOne).Entity)
 
-	case messages.QueryHouseholds:
+	case messages.Query:
+		if msg.Entity != messages.HouseholdEntity {
+			return
+		}
+
 		response, _ := context.RequestFuture(state.persistence, persistence.Query{
-			EntityType: HouseholdEntity.String(),
+			EntityType: messages.HouseholdEntity.String(),
 			Model:      func() persistence.HasId { return &models.HouseholdImpl{new(models.Household)} },
 		}, timeout).Result()
 		context.Respond(response.(persistence.Query).Entities)
 
 	case messages.DeleteHousehold:
 		_, err := context.RequestFuture(state.persistence, persistence.Delete{
-			Id:         msg.Id,
-			EntityType: HouseholdEntity.String(),
+			Ids:        [][]byte{msg.Id},
+			EntityType: messages.HouseholdEntity.String(),
 		}, timeout).Result()
 		context.Respond(err)
 
@@ -64,15 +68,4 @@ func (state *HouseholdRulesActor) Receive(context actor.Context) {
 	case *actor.Stopped:
 	case *actor.Restarting:
 	}
-}
-
-type EntityType string
-
-const (
-	HouseholdEntity EntityType = "Household"
-	GroupEntity     EntityType = "Group"
-)
-
-func (e EntityType) String() string {
-	return string(e)
 }

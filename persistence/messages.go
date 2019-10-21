@@ -50,5 +50,5 @@ type Update struct {
 
 type Delete struct {
 	EntityType string
-	Id         []byte
+	Ids        [][]byte
 }

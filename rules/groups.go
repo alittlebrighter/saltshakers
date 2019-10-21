@@ -25,102 +25,138 @@ type GroupRulesActor struct {
 func (state *GroupRulesActor) Receive(context actor.Context) {
 	switch msg := context.Message().(type) {
 	case messages.GenerateGroups:
-		groupsFuture := context.RequestFuture(state.persistence, persistence.Query{
-			EntityType: GroupEntity.String(),
+		context.Respond(state.GenerateGroups(context, msg))
+	case messages.SaveGroups:
+		response, _ := context.RequestFuture(state.persistence, persistence.CreateMany{
+			EntityType: messages.GroupEntity.String(),
+			Entities:   GroupsToHasId(msg.Groups),
+			Upsert:     true,
+		}, timeout).Result()
+		context.Respond(response)
+
+	case messages.Query:
+		if msg.Entity != messages.GroupEntity {
+			return
+		}
+
+		response, _ := context.RequestFuture(state.persistence, persistence.Query{
+			EntityType: messages.GroupEntity.String(),
 			Model:      func() persistence.HasId { return &models.GroupImpl{new(models.Group)} },
-		}, timeout)
-		householdsFuture := context.RequestFuture(state.persistence, persistence.Query{
-			EntityType: HouseholdEntity.String(),
-			Model:      func() persistence.HasId { return &models.HouseholdImpl{new(models.Household)} },
-		}, timeout)
+		}, timeout).Result()
+		context.Respond(response.(persistence.Query).Entities)
 
-		groupsResult, _ := ArrayFromQueryFuture(groupsFuture)
-		householdsResult, _ := ArrayFromQueryFuture(householdsFuture)
-
-		historicalGroups := make([]*models.Group, len(groupsResult))
-		for i, g := range groupsResult {
-			historicalGroups[i] = g.(*models.GroupImpl).Group
-		}
-		households := []*models.Household{}
-		for _, hh := range householdsResult {
-			household := hh.(*models.HouseholdImpl).Household
-			if household.GetActive() {
-				households = append(households, household)
-			}
+	case messages.DeleteGroups:
+		ids := make([][]byte, len(msg.Groups))
+		for i, group := range msg.Groups {
+			ids[i] = (&models.GroupImpl{Group: group}).GetId()
 		}
 
-		// low scoring hosts should be picked for new groups
-		hostScores := ScoreHosts(GetHostsFromHouseholds(households), historicalGroups)
-		By(scoreAsc).Sort(hostScores)
+		_, err := context.RequestFuture(state.persistence, persistence.Delete{
+			Ids:        ids,
+			EntityType: messages.GroupEntity.String(),
+		}, timeout).Result()
+		context.Respond(err)
 
-		groupCount := len(households) / int(msg.TargetHouseholdCount)
-		if float32(len(households)%int(msg.TargetHouseholdCount)) > .5*float32(msg.TargetHouseholdCount) {
-			groupCount++
-		}
-
-		now := &timestamp.Timestamp{Seconds: time.Now().Unix()}
-		groups := make([]*models.Group, groupCount)
-		for i := range groups {
-			groups[i] = &models.Group{
-				HostId:       hostScores[i].Id,
-				DateAssigned: now,
-				HouseholdIds: [][]byte{hostScores[i].Id},
-			}
-
-			households = FilterHouseholds(households, []models.HouseholdFilter{
-				func(hh *models.Household) bool {
-					return string(hh.GetId()) != string(groups[i].GetHostId())
-				},
-			})
-		}
-
-		for i := range groups {
-			// score other households against hosts
-			otherHHScores := ScoreGroup(groups[i].GetHostId(), households, historicalGroups)
-			By(scoreAsc).Sort(otherHHScores)
-
-			if len(households) >= int(msg.TargetHouseholdCount)-1 {
-				for _, score := range otherHHScores[:msg.TargetHouseholdCount-1] {
-					groups[i].HouseholdIds = append(groups[i].HouseholdIds, score.Id)
-				}
-			} else if float32(len(households)) >= .5*float32(msg.TargetHouseholdCount) {
-				for _, score := range otherHHScores {
-					groups[i].HouseholdIds = append(groups[i].HouseholdIds, score.Id)
-				}
-			}
-
-			households = FilterHouseholds(households, []models.HouseholdFilter{
-				func(hh *models.Household) bool {
-					notFound := true
-					for _, hhId := range groups[i].GetHouseholdIds() {
-						if string(hh.GetId()) == string(hhId) {
-							notFound = false
-							break
-						}
-					}
-					return notFound
-				},
-			})
-		}
-
-		for i := 0; len(households) > 0; i = (i + 1) % len(groups) {
-			groups[i].HouseholdIds = append(groups[i].HouseholdIds, households[0].GetId())
-			if len(households) > 1 {
-				households = households[1:]
-			} else {
-				households = []*models.Household{}
-			}
-		}
-
-		context.Respond(groups)
 	case *messages.PIDEnvelope:
 		switch msg.Type() {
 		case messages.PersistencePID:
 			state.persistence = msg.PID()
 		}
+
 	case *actor.Started:
 		context.Request(context.Parent(), messages.NewPIDEnvelope(messages.PersistencePID, nil))
 	}
+}
+
+func (state *GroupRulesActor) GenerateGroups(context actor.Context, msg messages.GenerateGroups) []*models.Group {
+	groupsFuture := context.RequestFuture(state.persistence, persistence.Query{
+		EntityType: messages.GroupEntity.String(),
+		Model:      func() persistence.HasId { return &models.GroupImpl{new(models.Group)} },
+	}, timeout)
+	householdsFuture := context.RequestFuture(state.persistence, persistence.Query{
+		EntityType: messages.HouseholdEntity.String(),
+		Model:      func() persistence.HasId { return &models.HouseholdImpl{new(models.Household)} },
+	}, timeout)
+
+	groupsResult, _ := ArrayFromQueryFuture(groupsFuture)
+	householdsResult, _ := ArrayFromQueryFuture(householdsFuture)
+
+	historicalGroups := make([]*models.Group, len(groupsResult))
+	for i, g := range groupsResult {
+		historicalGroups[i] = g.(*models.GroupImpl).Group
+	}
+	households := []*models.Household{}
+	for _, hh := range householdsResult {
+		household := hh.(*models.HouseholdImpl).Household
+		if household.GetActive() {
+			households = append(households, household)
+		}
+	}
+
+	// low scoring hosts should be picked for new groups
+	hostScores := ScoreHosts(GetHostsFromHouseholds(households), historicalGroups)
+	By(scoreAsc).Sort(hostScores)
+
+	groupCount := len(households) / int(msg.TargetHouseholdCount)
+	if float32(len(households)%int(msg.TargetHouseholdCount)) > .5*float32(msg.TargetHouseholdCount) {
+		groupCount++
+	}
+
+	date := &timestamp.Timestamp{Seconds: utils.SecondOfTheMonth(time.Now()).Unix()}
+	groups := make([]*models.Group, groupCount)
+	for i := range groups {
+		groups[i] = &models.Group{
+			HostId:       hostScores[i].Id,
+			DateAssigned: date,
+			HouseholdIds: [][]byte{hostScores[i].Id},
+		}
+
+		households = FilterHouseholds(households, []models.HouseholdFilter{
+			func(hh *models.Household) bool {
+				return string(hh.GetId()) != string(groups[i].GetHostId())
+			},
+		})
+	}
+
+	for i := range groups {
+		// score other households against hosts
+		otherHHScores := ScoreGroup(groups[i].GetHostId(), households, historicalGroups)
+		By(scoreAsc).Sort(otherHHScores)
+
+		if len(households) >= int(msg.TargetHouseholdCount)-1 {
+			for _, score := range otherHHScores[:msg.TargetHouseholdCount-1] {
+				groups[i].HouseholdIds = append(groups[i].HouseholdIds, score.Id)
+			}
+		} else if float32(len(households)) >= .5*float32(msg.TargetHouseholdCount) {
+			for _, score := range otherHHScores {
+				groups[i].HouseholdIds = append(groups[i].HouseholdIds, score.Id)
+			}
+		}
+
+		households = FilterHouseholds(households, []models.HouseholdFilter{
+			func(hh *models.Household) bool {
+				notFound := true
+				for _, hhId := range groups[i].GetHouseholdIds() {
+					if string(hh.GetId()) == string(hhId) {
+						notFound = false
+						break
+					}
+				}
+				return notFound
+			},
+		})
+	}
+
+	for i := 0; len(households) > 0; i = (i + 1) % len(groups) {
+		groups[i].HouseholdIds = append(groups[i].HouseholdIds, households[0].GetId())
+		if len(households) > 1 {
+			households = households[1:]
+		} else {
+			households = []*models.Household{}
+		}
+	}
+
+	return groups
 }
 
 // ScoreHosts returns a list of hosts with a score attached low scores should be selected to host next
@@ -273,4 +309,13 @@ func (s *scoreSorter) Swap(i, j int) {
 // Less is part of sort.Interface. It is implemented by calling the "by" closure in the sorter.
 func (s *scoreSorter) Less(i, j int) bool {
 	return s.by(&s.scores[i], &s.scores[j])
+}
+
+func GroupsToHasId(groups []*models.Group) []persistence.HasId {
+	hasIds := make([]persistence.HasId, len(groups))
+	for i, group := range groups {
+		hasIds[i] = &models.GroupImpl{group}
+	}
+
+	return hasIds
 }

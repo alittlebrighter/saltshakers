@@ -30,6 +30,11 @@ export const setActiveGroups = groups => ({
     payload: groups
 });
 
+export const NO_OP = 'NO_OP';
+export const noOp = () => ({
+    type: NO_OP,
+});
+
 export const getHouseholds = () => fetch(config.apiBaseURL + "/households", {method: "GET", mode: "cors"})
     .then((response) => response.json())
     .then(households => setHouseholds(households));
@@ -55,3 +60,18 @@ export const deleteHousehold = id => fetch(config.apiBaseURL + "/households/" + 
 export const generateGroups = hhCount => fetch(config.apiBaseURL + "/groups/generate?targetHouseholdCount=" + hhCount)
     .then(response => response.json())
     .then(groups => setActiveGroups(groups));
+
+export const saveGroups = groups => fetch(config.apiBaseURL + "/groups", {
+        method: "POST",
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        mode: "cors",
+        body: JSON.stringify(groups),
+    })
+    .then(() => noOp())
+    .catch(console.log);
+
+export const getGroups = () => fetch(config.apiBaseURL + "/groups")
+    .then(response => response.json())
+    .then(groups => setGroups(groups))
