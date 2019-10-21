@@ -1,5 +1,6 @@
 {
-  "name": "salteshakers-spa",
+  "name": "saltshakers-spa",
+  "author": {"name": "Adam Bright", "email": "brightam1@gmail.com"},
   "version": "0.1.0",
   "private": true,
   "scripts": {
