@@ -1,6 +1,9 @@
 {
   "name": "saltshakers-spa",
-  "author": {"name": "Adam Bright", "email": "brightam1@gmail.com"},
+  "author": {
+    "name": "Adam Bright",
+    "email": "brightam1@gmail.com"
+  },
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -10,10 +13,13 @@
   },
   "dependencies": {
     "core-js": "^2.6.5",
+    "foundation-sites": "^6.5.3",
+    "jquery": "^3.4.1",
     "redux": "^4.0.4",
     "vue": "^2.6.10",
     "vue-router": "^3.0.3",
-    "vuedraggable": "^2.23.2"
+    "vuedraggable": "^2.23.2",
+    "what-input": "^5.2.6"
   },
   "devDependencies": {
     "@vue/cli-plugin-babel": "^3.12.0",

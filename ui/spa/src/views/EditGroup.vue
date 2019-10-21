@@ -1,17 +1,24 @@
 <template>
-<div>
-  <h1>{{title}}</h1>
-  <h3>{{groups.length > 0 ? new Date(groups[0].date_assigned.seconds * 1000).toString() : "unknown"}}</h3>
-  <ul :v-if="Object.keys(households).length > 0" v-for="group in groups" :key="group.host_id">
-    <li>Host: {{households[group.host_id] ? households[group.host_id].surname : group.hose_id}}</li>
-  <draggable class="group-box" v-bind="dragOptions" :move="onMove" @start="isDragging=true" @end="isDragging=false">
-    <transition-group>
-      <li v-for="hhId in getNonHosts(group)" :key="hhId">
-          {{households[hhId] ? households[hhId].surname : hhId}}
-      </li>
-    </transition-group>
-  </draggable>
-  </ul>
+<div class="grid-x grid-margin-x">
+  <h1 class="cell">{{title}}</h1>
+  <h3 class="cell">{{months[jsDate.getMonth()]}} - {{jsDate.getFullYear()}}</h3>
+  
+  <div class="cell medium-1"></div>
+  <div v-for="group in groups" :key="group.host_id" class="card cell medium-3" style="width: 300px;">
+    <div class="card-divider">
+      <b>Host:</b> {{households[group.host_id] ? households[group.host_id].surname : group.hose_id}}
+    </div>
+    <div class="card-section">
+      <draggable tag="ul" class="group-box" v-bind="dragOptions" :move="onMove" @start="isDragging=true" @end="isDragging=false">
+        <transition-group>
+          <li v-for="hhId in getNonHosts(group)" :key="hhId">
+              {{households[hhId] ? households[hhId].surname : hhId}}
+          </li>
+        </transition-group>
+      </draggable>
+    </div>
+  </div>
+
   <button @click="save(groups)">Save</button>
 </div>
 </template>
@@ -35,10 +42,6 @@ export default {
       self.households = state.households;
       self.groups = state.activeGroups;
       self.savedGroups = state.groups;
-
-      if (self.savedGroups) {
-        console.log("saved:", self.savedGroups);
-      }
     });
 
     if (Object.keys(store.getState().households).length === 0) {
@@ -54,8 +57,24 @@ export default {
       households: {},
       editable: true,
       isDragging: false,
-      delayedDragging: false
-    }
+      delayedDragging: false,
+
+      months: [
+        "",
+        "January",
+        "February",
+        "March",
+        "April",
+        "May",
+        "June",
+        "July",
+        "August", 
+        "September",
+        "October",
+        "November",
+        "December",
+      ],
+    };
     return data;
   },
   methods: {
@@ -74,9 +93,12 @@ export default {
       return (
         (!relatedElement || !relatedElement.fixed) && !draggedElement.fixed
       );
-    }
+    },
   },
   computed: {
+    jsDate() {
+      return this.groups && this.groups.length > 0 ? new Date(this.groups[0].date_assigned.seconds * 1000) : new Date();
+    },
     dragOptions() {
       return {
         animation: 0,
@@ -101,7 +123,4 @@ export default {
 </script>
 
 <style>
-.group-box {
-  padding: 20px;
-}
 </style>

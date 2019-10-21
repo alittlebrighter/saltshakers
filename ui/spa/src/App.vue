@@ -1,10 +1,16 @@
 <template>
   <div id="app">
-    <ul id="nav">
-      <li v-for="action in actions" :key="action.route">
-        <router-link :to="action.route">{{ action.label }}</router-link>
-      </li>
-    </ul>
+    <div class="top-bar">
+      <div class="top-bar-left">
+        <ul id="nav" class="dropdown menu" data-dropdown-menu>
+          <li class="menu-text">Saltshakers Household and Group Manager</li>
+          <li v-for="action in actions" :key="action.route">
+            <router-link :to="action.route">{{ action.label }}</router-link>
+          </li>
+        </ul>
+      </div>
+      <div class="top-bar-right"></div>
+    </div>
     <router-view/>
   </div>
 </template>
@@ -45,23 +51,5 @@ export default {
 </script>
 
 <style>
-#app {
-  font-family: "Avenir", Helvetica, Arial, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  text-align: center;
-  color: #2c3e50;
-}
-#nav {
-  padding: 30px;
-}
 
-#nav a {
-  font-weight: bold;
-  color: #2c3e50;
-}
-
-#nav a.router-link-exact-active {
-  color: #42b983;
-}
 </style>
