@@ -1,38 +1,70 @@
 <template>
-<div class="grid-x grid-margin-x">
-  <h1 class="cell">{{title}}</h1>
-  <h3 class="cell">{{months[jsDate.getMonth()]}} - {{jsDate.getFullYear()}}</h3>
-  
-  <div class="cell medium-1"></div>
-  <div v-for="group in groups" :key="group.host_id" class="card cell medium-3" style="width: 300px;">
-    <div class="card-divider">
-      <b>Host:</b> {{households[group.host_id] ? households[group.host_id].surname : group.hose_id}}
-    </div>
-    <div class="card-section">
-      <draggable tag="ul" class="group-box" v-bind="dragOptions" :move="onMove" @start="isDragging=true" @end="isDragging=false">
-        <transition-group>
-          <li v-for="hhId in getNonHosts(group)" :key="hhId">
-              {{households[hhId] ? households[hhId].surname : hhId}}
-          </li>
-        </transition-group>
-      </draggable>
+  <div class="main grid-x grid-margin-x">
+    <ul class="sidebar cell medium-1">
+      <li @click="generate(4)">Generate Groups</li>
+      <li
+        v-for="(groups, date_assigned) in savedGroups"
+        :key="date_assigned.seconds"
+        @click="showGroups(groups)"
+      >{{ secondsToMonthYear(date_assigned) }}</li>
+    </ul>
+    <div class="cell medium-10 grid-x grid-margin-x">
+      <h1 class="cell">{{title}}</h1>
+      <h3 class="cell">{{ secondsToMonthYear(groupsTimestamp.seconds) }}</h3>
+
+      <div class="cell medium-1"></div>
+      <div
+        v-for="group in groups"
+        :key="group.host_id"
+        class="card cell medium-3"
+        style="width: 300px;"
+      >
+        <div class="card-divider">
+          <b>Host:</b>
+          {{households[group.host_id] ? households[group.host_id].surname : group.hose_id}}
+        </div>
+        <div class="card-section">
+          <draggable
+            tag="ul"
+            class="group-box"
+            v-bind="dragOptions"
+            :move="onMove"
+            @start="isDragging=true"
+            @end="isDragging=false"
+          >
+            <transition-group>
+              <li
+                :class="{grabbable: canSave}"
+                v-for="hhId in getNonHosts(group)"
+                :key="hhId"
+              >{{households[hhId] ? households[hhId].surname : hhId}}</li>
+            </transition-group>
+          </draggable>
+          <button v-if="!canSave" class="button hollow card-controls">
+            <i class="fad fa-trash"></i>
+          </button>
+        </div>
+      </div>
+      <button v-if="canSave" @click="save(groups)" class="cell button">Save</button>
     </div>
   </div>
-
-  <button @click="save(groups)">Save</button>
-</div>
 </template>
 
 <script>
 import draggable from "vuedraggable";
 
-import store from '../store/store';
-import { generateGroups, getHouseholds, saveGroups, getGroups } from '../store/actions';
+import store from "../store/store";
+import {
+  generateGroups,
+  getHouseholds,
+  saveGroups,
+  getGroups
+} from "../store/actions";
 
 export default {
   name: "EditGroups",
   components: {
-      draggable
+    draggable
   },
   data() {
     const self = this;
@@ -41,7 +73,23 @@ export default {
 
       self.households = state.households;
       self.groups = state.activeGroups;
-      self.savedGroups = state.groups;
+      self.canSave = true;
+      if (Object.keys(self.savedGroups).length > 0) {
+        return;
+      }
+
+      self.savedGroups = {};
+      for (var i = 0; i < state.groups.length; i++) {
+        if (self.savedGroups[state.groups[i].date_assigned.seconds]) {
+          self.savedGroups[state.groups[i].date_assigned.seconds].push(
+            state.groups[i]
+          );
+        } else {
+          self.savedGroups[state.groups[i].date_assigned.seconds] = [
+            state.groups[i]
+          ];
+        }
+      }
     });
 
     if (Object.keys(store.getState().households).length === 0) {
@@ -53,11 +101,12 @@ export default {
     const data = {
       title: "Groups",
       groups: [],
-      savedGroups: [],
+      savedGroups: {},
       households: {},
       editable: true,
       isDragging: false,
       delayedDragging: false,
+      canSave: true,
 
       months: [
         "",
@@ -68,21 +117,32 @@ export default {
         "May",
         "June",
         "July",
-        "August", 
+        "August",
         "September",
         "October",
         "November",
-        "December",
-      ],
+        "December"
+      ]
     };
     return data;
   },
   methods: {
+    showGroups(groups) {
+      this.groups = groups;
+      this.canSave = false;
+    },
+    secondsToDate(seconds) {
+      return new Date(seconds * 1000);
+    },
     generate(hhCount) {
       store.dispatch(generateGroups(hhCount));
     },
     getNonHosts(group) {
       return group.household_ids.filter(hh => hh !== group.host_id);
+    },
+    secondsToMonthYear(seconds) {
+      const date = this.secondsToDate(seconds);
+      return this.months[date.getMonth()] + " " + date.getFullYear();
     },
     save(groups) {
       store.dispatch(saveGroups(groups));
@@ -93,11 +153,13 @@ export default {
       return (
         (!relatedElement || !relatedElement.fixed) && !draggedElement.fixed
       );
-    },
+    }
   },
   computed: {
-    jsDate() {
-      return this.groups && this.groups.length > 0 ? new Date(this.groups[0].date_assigned.seconds * 1000) : new Date();
+    groupsTimestamp() {
+      return this.groups && this.groups.length > 0
+        ? this.groups[0].date_assigned
+        : Math.floor(Date.now() / 1000);
     },
     dragOptions() {
       return {
@@ -106,7 +168,7 @@ export default {
         disabled: !this.editable,
         ghostClass: "ghost"
       };
-    },
+    }
   },
   watch: {
     isDragging(newValue) {
@@ -123,4 +185,26 @@ export default {
 </script>
 
 <style>
+.main {
+  height: 100%;
+}
+
+.sidebar {
+  height: 100%;
+  overflow: auto;
+  border-right: solid 1px #000;
+}
+
+.grabbable {
+  list-style: none;
+  text-align: center;
+  border: solid 1px gray;
+  border-radius: 5px;
+  cursor: grab;
+}
+
+.card-controls {
+  position: relative;
+  bottom: 0;
+}
 </style>

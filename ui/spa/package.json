@@ -22,6 +22,7 @@
     "what-input": "^5.2.6"
   },
   "devDependencies": {
+    "@fortawesome/fontawesome-pro": "^5.11.2",
     "@vue/cli-plugin-babel": "^3.12.0",
     "@vue/cli-plugin-eslint": "^3.12.0",
     "@vue/cli-service": "^3.12.0",

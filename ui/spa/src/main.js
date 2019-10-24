@@ -1,5 +1,7 @@
-import './../node_modules/foundation-sites/dist/css/foundation.min.css';
-import './../node_modules/foundation-sites/dist/js/foundation.min.js';
+import "./../node_modules/foundation-sites/dist/css/foundation.min.css";
+import "./../node_modules/foundation-sites/dist/js/foundation.min.js";
+import "./../node_modules/@fortawesome/fontawesome-pro/css/all.min.css";
+import "./../node_modules/@fortawesome/fontawesome-pro/js/all.min.js";
 
 import Vue from "vue";
 
@@ -13,9 +15,13 @@ Vue.use(VueRouter);
 
 const router = new VueRouter({
   routes: [
-    { path: '/households', component: Households },
-    { path: '/add-household/:id', component: AddHousehold, props: { id: null } },
-    { path: '/create-groups', component: EditGroup},
+    { path: "/households", component: Households },
+    {
+      path: "/add-household/:id",
+      component: AddHousehold,
+      props: { id: null }
+    },
+    { path: "/groups", component: EditGroup }
   ]
 });
 

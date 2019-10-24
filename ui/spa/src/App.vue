@@ -11,7 +11,7 @@
       </div>
       <div class="top-bar-right"></div>
     </div>
-    <router-view/>
+    <router-view />
   </div>
 </template>
 
@@ -21,29 +21,25 @@ export default {
     drawer: false,
     actions: [
       {
-        label: "Manage Households",
+        label: "Households",
         icon: "",
         route: "/households"
       },
       {
-        label: "Create Groups",
+        label: "Groups",
         icon: "",
-        route: "/create-groups"
-      },
-      {
-        label: "History",
-        icon: "",
-        route: "/group-history"
-      },
+        route: "/groups"
+      }
+      /*
       {
         label: "Settings",
         icon: "",
         route: "/settings"
       }
+      */
     ]
   }),
-  components: {
-  },
+  components: {},
   props: {
     source: String
   }
@@ -51,5 +47,4 @@ export default {
 </script>
 
 <style>
-
 </style>
