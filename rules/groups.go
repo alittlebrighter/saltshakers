@@ -105,6 +105,9 @@ func (state *GroupRulesActor) GenerateGroups(context actor.Context, msg messages
 	date := &timestamp.Timestamp{Seconds: utils.SecondOfTheMonth(time.Now()).Unix()}
 	groups := make([]*models.Group, groupCount)
 	for i := range groups {
+		if i >= len(hostScores) {
+			break
+		}
 		groups[i] = &models.Group{
 			HostId:       hostScores[i].Id,
 			DateAssigned: date,
@@ -168,7 +171,7 @@ func ScoreHosts(hosts [][]byte, groups []*models.Group) []Score {
 	}
 
 	// score hosts
-	const maxScore int = 90
+	const maxScore int = 120
 	now := time.Now().Unix()
 	for _, group := range groups {
 		daysDiff := time.Duration(now-group.GetDateAssigned().GetSeconds()) * time.Second % (time.Hour * 24)
@@ -200,7 +203,7 @@ func ScoreGroup(targetHousehold []byte, households []*models.Household, groups [
 	}
 
 	// score hosts
-	const maxScore int = 90
+	const maxScore int = 120
 	now := time.Now().Unix()
 	for _, group := range groups {
 		found := false
