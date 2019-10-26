@@ -1,10 +1,7 @@
 package utils
 
 import (
-	"strconv"
-
 	"github.com/AsynkronIT/protoactor-go/actor"
-	"github.com/AsynkronIT/protoactor-go/actor/middleware"
 	"github.com/AsynkronIT/protoactor-go/router"
 	"github.com/alittlebrighter/saltshakers/messages"
 )
@@ -29,8 +26,9 @@ func (a *BaseActor) Name() string {
 func (a *BaseActor) SetChildren(context actor.Context, childProps ...*actor.Props) {
 	impls := make([]*actor.PID, len(childProps))
 	for i, props := range childProps {
-		iStr := strconv.Itoa(i)
-		impls[i], _ = context.SpawnNamed(props.WithReceiverMiddleware(middleware.Logger), a.Name()+"_"+iStr)
+		//iStr := strconv.Itoa(i)
+		//impls[i], _ = context.SpawnNamed(props.WithReceiverMiddleware(middleware.Logger), a.Name()+"_"+iStr)
+		impls[i] = context.Spawn(props)
 	}
 
 	a.childProps = router.NewBroadcastGroup(impls...)
