@@ -2,10 +2,13 @@
   <div id="app">
     <div class="top-bar">
       <div class="top-bar-left">
-        <ul id="nav" class="dropdown menu" data-dropdown-menu>
+        <ul id="nav" class="menu" data-dropdown-menu>
           <li class="menu-text">Saltshakers Household and Group Manager</li>
-          <li v-for="action in actions" :key="action.route">
-            <router-link :to="action.route">{{ action.label }}</router-link>
+          <li class="menu-option" v-for="action in actions" :key="action.route">
+            <router-link class="inline" :to="action.route">
+              <i :class="action.icon"></i>
+              {{ action.label }}
+            </router-link>
           </li>
         </ul>
       </div>
@@ -22,12 +25,12 @@ export default {
     actions: [
       {
         label: "Households",
-        icon: "",
+        icon: "fad fa-home",
         route: "/households"
       },
       {
         label: "Groups",
-        icon: "",
+        icon: "fad fa-user-friends",
         route: "/groups"
       }
       /*
@@ -47,4 +50,7 @@ export default {
 </script>
 
 <style>
+.inline {
+  display: inline;
+}
 </style>

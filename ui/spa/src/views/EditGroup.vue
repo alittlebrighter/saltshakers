@@ -1,18 +1,29 @@
 <template>
   <div class="main grid-x grid-margin-x">
-    <ul class="sidebar cell medium-1">
-      <li @click="generate(4)">Generate Groups</li>
-      <li
-        v-for="(groups, date_assigned) in savedGroups"
-        :key="date_assigned.seconds"
-        @click="showGroups(groups)"
-      >{{ secondsToMonthYear(date_assigned) }}</li>
-    </ul>
+    <div class="sidebar cell medium-2">
+      <ul>
+        <li @click="generate(targetSize)">
+          Generate Groups
+          <label>
+            Size
+            <input v-model="targetSize" type="number" class="small" id="size" />
+          </label>
+        </li>
+        <li>
+          <i class="fas fa-ellipsis-h"></i>
+        </li>
+        <li
+          v-for="(groups, date_assigned) in savedGroups"
+          :key="date_assigned.seconds"
+          @click="showGroups(groups)"
+        >{{ secondsToMonthYear(date_assigned) }}</li>
+      </ul>
+    </div>
     <div class="cell medium-10 grid-x grid-margin-x">
       <h1 class="cell">{{title}}</h1>
-      <h3 class="cell">{{ secondsToMonthYear(groupsTimestamp.seconds) }}</h3>
 
-      <div class="cell medium-1"></div>
+      <h3 v-if="!canSave" class="cell">{{ secondsToMonthYear(groupsTimestamp.seconds) }}</h3>
+
       <div
         v-for="group in groups"
         :key="group.host_id"
@@ -21,7 +32,15 @@
       >
         <div class="card-divider">
           <b>Host:</b>
-          {{households[group.host_id] ? households[group.host_id].surname : group.hose_id}}
+          &nbsp;
+          {{households[group.host_id] ? households[group.host_id].surname : group.hose_id}}&nbsp;
+          <button
+            @click="deleteGroup(group)"
+            v-if="!canSave"
+            class="button hollow warn float-right"
+          >
+            <i class="fad fa-trash"></i>
+          </button>
         </div>
         <div class="card-section">
           <draggable
@@ -40,9 +59,6 @@
               >{{households[hhId] ? households[hhId].surname : hhId}}</li>
             </transition-group>
           </draggable>
-          <button v-if="!canSave" class="button hollow card-controls">
-            <i class="fad fa-trash"></i>
-          </button>
         </div>
       </div>
       <button v-if="canSave" @click="save(groups)" class="cell button">Save</button>
@@ -58,7 +74,8 @@ import {
   generateGroups,
   getHouseholds,
   saveGroups,
-  getGroups
+  getGroups,
+  deleteGroup
 } from "../store/actions";
 
 export default {
@@ -96,10 +113,10 @@ export default {
       store.dispatch(getHouseholds());
       store.dispatch(getGroups());
     }
-    this.generate(4);
 
     const data = {
       title: "Groups",
+      targetSize: 4,
       groups: [],
       savedGroups: {},
       households: {},
@@ -124,6 +141,8 @@ export default {
         "December"
       ]
     };
+    this.generate(data.targetSize);
+
     return data;
   },
   methods: {
@@ -146,6 +165,9 @@ export default {
     },
     save(groups) {
       store.dispatch(saveGroups(groups));
+    },
+    deleteGroup(group) {
+      store.dispatch(deleteGroup(group));
     },
     onMove({ relatedContext, draggedContext }) {
       const relatedElement = relatedContext.element;
@@ -190,9 +212,13 @@ export default {
 }
 
 .sidebar {
-  height: 100%;
   overflow: auto;
   border-right: solid 1px #000;
+  text-align: center;
+}
+
+.sidebar > ul > li {
+  list-style: none;
 }
 
 .grabbable {
@@ -203,8 +229,8 @@ export default {
   cursor: grab;
 }
 
-.card-controls {
-  position: relative;
-  bottom: 0;
+.small {
+  display: inline;
+  width: 50px;
 }
 </style>
