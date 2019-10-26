@@ -24,7 +24,7 @@ message Household {
   string surname = 2;
   repeated HouseholdMember members = 3; // length of members == size of household
   string email = 4;
-  uint32 phone = 5;
+  uint64 phone = 5;
   ContactType preferred_contact = 6;
   bool active = 7;
   bool host = 8;
