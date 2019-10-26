@@ -24,6 +24,18 @@ export const setGroups = groups => ({
   payload: groups
 });
 
+export const ADD_GROUPS = "ADD_GROUPS";
+export const addGroups = groups => ({
+  type: ADD_GROUPS,
+  payload: groups
+});
+
+export const DELETE_GROUP = "DELETE_GROUP";
+export const removeGroup = group => ({
+  type: DELETE_GROUP,
+  payload: group
+});
+
 export const SET_ACTIVE_GROUPS = "SET_ACTIVE_GROUPS";
 export const setActiveGroups = groups => ({
   type: SET_ACTIVE_GROUPS,
@@ -76,7 +88,7 @@ export const saveGroups = groups =>
     mode: "cors",
     body: JSON.stringify(groups)
   })
-    .then(() => noOp())
+    .then(() => addGroups(groups))
     .catch(console.log);
 
 export const getGroups = () =>
@@ -91,5 +103,5 @@ export const deleteGroup = group =>
       "Content-Type": "application/json"
     },
     mode: "cors",
-    body: JSON.stringify(group)
-  });
+    body: JSON.stringify([group])
+  }).then(() => removeGroup(group));

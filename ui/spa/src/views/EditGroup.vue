@@ -91,9 +91,6 @@ export default {
       self.households = state.households;
       self.groups = state.activeGroups;
       self.canSave = true;
-      if (Object.keys(self.savedGroups).length > 0) {
-        return;
-      }
 
       self.savedGroups = {};
       for (var i = 0; i < state.groups.length; i++) {
