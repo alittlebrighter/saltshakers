@@ -58,10 +58,6 @@ func (state *BaseActor) GetPID(pidType messages.PIDType) *actor.PID {
 	return state.knownPIDs[pidType]
 }
 
-func (state *BaseActor) Stopping(context actor.Context) {
-	context.Stop(state.Children())
-}
-
 func (state *BaseActor) Restarting(context actor.Context, msg *actor.Restarting) {
 	state.restarts++
 
