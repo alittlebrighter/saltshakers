@@ -68,6 +68,9 @@ func (state *HttpRestActor) startServer(serveAt string) {
 		AllowHeaders: []string{echo.HeaderOrigin, echo.HeaderContentType, echo.HeaderAccept},
 	}))
 
+	// should be in config
+	//state.server.Static("/", "./ui/spa/dist")
+
 	const prefix = "/api"
 
 	state.server.POST(prefix+"/households", state.SaveHousehold)
@@ -78,6 +81,7 @@ func (state *HttpRestActor) startServer(serveAt string) {
 	state.server.GET(prefix+"/groups/generate", state.GenerateGroups)
 	state.server.POST(prefix+"/groups", state.SaveGroups)
 	state.server.GET(prefix+"/groups", state.GetGroups)
+	state.server.DELETE(prefix+"/groups", state.DeleteGroups)
 
 	go func() {
 		log.Println(state.Name(), "server exited with:", state.server.Start(serveAt))
@@ -121,7 +125,7 @@ func (state *HttpRestActor) DeleteHousehold(c echo.Context) error {
 	return state.sendRequest(c, messages.DeleteHousehold{Id: id})
 }
 
-func (state *HttpRestActor) DeleteGroup(c echo.Context) error {
+func (state *HttpRestActor) DeleteGroups(c echo.Context) error {
 	var payload []*models.Group
 	if err := c.Bind(&payload); err != nil {
 		c.String(http.StatusBadRequest, "could not parse request: "+err.Error())
