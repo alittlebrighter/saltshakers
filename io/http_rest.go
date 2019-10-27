@@ -3,6 +3,7 @@ package io
 import (
 	ctxLib "context"
 	"encoding/base64"
+	"fmt"
 	"log"
 	"net/http"
 	"strconv"
@@ -63,13 +64,16 @@ func (state *HttpRestActor) Receive(context actor.Context) {
 
 func (state *HttpRestActor) startServer(serveAt string) {
 	state.server = echo.New()
+	state.server.HideBanner = true
+	state.server.HidePort = true
+
 	state.server.Use(middleware.CORSWithConfig(middleware.CORSConfig{
 		AllowOrigins: []string{"http://localhost:8080"},
 		AllowHeaders: []string{echo.HeaderOrigin, echo.HeaderContentType, echo.HeaderAccept},
 	}))
 
 	// should be in config
-	//state.server.Static("/", "./ui/spa/dist")
+	state.server.Static("/", "./ui")
 
 	const prefix = "/api"
 
@@ -82,6 +86,8 @@ func (state *HttpRestActor) startServer(serveAt string) {
 	state.server.POST(prefix+"/groups", state.SaveGroups)
 	state.server.GET(prefix+"/groups", state.GetGroups)
 	state.server.DELETE(prefix+"/groups", state.DeleteGroups)
+
+	fmt.Println(fmt.Sprintf("Visit http://%s/ in your browser to use the Saltshakers application.", serveAt))
 
 	go func() {
 		log.Println(state.Name(), "server exited with:", state.server.Start(serveAt))
