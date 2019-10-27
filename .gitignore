@@ -1,3 +1,4 @@
 **/*.db
 **/*.pb.go
-saltshakers.db
+*.db
+dist/
