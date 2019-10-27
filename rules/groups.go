@@ -25,7 +25,19 @@ type GroupRulesActor struct {
 func (state *GroupRulesActor) Receive(context actor.Context) {
 	switch msg := context.Message().(type) {
 	case messages.GenerateGroups:
-		context.Respond(state.GenerateGroups(context, msg))
+		groupsFuture := context.RequestFuture(state.persistence, persistence.Query{
+			EntityType: messages.GroupEntity.String(),
+			Model:      func() persistence.HasId { return &models.GroupImpl{new(models.Group)} },
+		}, timeout)
+		householdsFuture := context.RequestFuture(state.persistence, persistence.Query{
+			EntityType: messages.HouseholdEntity.String(),
+			Model:      func() persistence.HasId { return &models.HouseholdImpl{new(models.Household)} },
+		}, timeout)
+
+		householdsResult, _ := ArrayFromQueryFuture(householdsFuture)
+		groupsResult, _ := ArrayFromQueryFuture(groupsFuture)
+
+		context.Respond(GenerateGroups(householdsResult, groupsResult, msg.TargetHouseholdCount))
 	case messages.SaveGroups:
 		response, _ := context.RequestFuture(state.persistence, persistence.CreateMany{
 			EntityType: messages.GroupEntity.String(),
@@ -68,19 +80,7 @@ func (state *GroupRulesActor) Receive(context actor.Context) {
 	}
 }
 
-func (state *GroupRulesActor) GenerateGroups(context actor.Context, msg messages.GenerateGroups) []*models.Group {
-	groupsFuture := context.RequestFuture(state.persistence, persistence.Query{
-		EntityType: messages.GroupEntity.String(),
-		Model:      func() persistence.HasId { return &models.GroupImpl{new(models.Group)} },
-	}, timeout)
-	householdsFuture := context.RequestFuture(state.persistence, persistence.Query{
-		EntityType: messages.HouseholdEntity.String(),
-		Model:      func() persistence.HasId { return &models.HouseholdImpl{new(models.Household)} },
-	}, timeout)
-
-	groupsResult, _ := ArrayFromQueryFuture(groupsFuture)
-	householdsResult, _ := ArrayFromQueryFuture(householdsFuture)
-
+func GenerateGroups(householdsResult, groupsResult []persistence.HasId, targetHouseholdCount uint8) []*models.Group {
 	historicalGroups := make([]*models.Group, len(groupsResult))
 	for i, g := range groupsResult {
 		historicalGroups[i] = g.(*models.GroupImpl).Group
@@ -97,8 +97,8 @@ func (state *GroupRulesActor) GenerateGroups(context actor.Context, msg messages
 	hostScores := ScoreHosts(GetHostsFromHouseholds(households), historicalGroups)
 	By(scoreAsc).Sort(hostScores)
 
-	groupCount := len(households) / int(msg.TargetHouseholdCount)
-	if float32(len(households)%int(msg.TargetHouseholdCount)) > .5*float32(msg.TargetHouseholdCount) {
+	groupCount := len(households) / int(targetHouseholdCount)
+	if float32(len(households)%int(targetHouseholdCount)) > .5*float32(targetHouseholdCount) {
 		groupCount++
 	}
 
@@ -126,11 +126,11 @@ func (state *GroupRulesActor) GenerateGroups(context actor.Context, msg messages
 		otherHHScores := ScoreGroup(groups[i].GetHostId(), households, historicalGroups)
 		By(scoreAsc).Sort(otherHHScores)
 
-		if len(households) >= int(msg.TargetHouseholdCount)-1 {
-			for _, score := range otherHHScores[:msg.TargetHouseholdCount-1] {
+		if len(households) >= int(targetHouseholdCount)-1 {
+			for _, score := range otherHHScores[:targetHouseholdCount-1] {
 				groups[i].HouseholdIds = append(groups[i].HouseholdIds, score.Id)
 			}
-		} else if float32(len(households)) >= .5*float32(msg.TargetHouseholdCount) {
+		} else if float32(len(households)) >= .5*float32(targetHouseholdCount) {
 			for _, score := range otherHHScores {
 				groups[i].HouseholdIds = append(groups[i].HouseholdIds, score.Id)
 			}
